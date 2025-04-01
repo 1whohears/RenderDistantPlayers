@@ -1,9 +1,8 @@
-package com.onewhohears.distant_players.network;
+package com.onewhohears.distant_players.common.network;
 
 import com.onewhohears.distant_players.DistantPlayersMod;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 

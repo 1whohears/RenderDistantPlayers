@@ -2,7 +2,7 @@ package com.onewhohears.distant_players.client.core;
 
 public final class DPClientManager {
 
-    public void handleRenderPlayerPacket() {
+    public void handleRenderPlayerPacket(ClientRenderPacketInfo info) {
 
     }
 

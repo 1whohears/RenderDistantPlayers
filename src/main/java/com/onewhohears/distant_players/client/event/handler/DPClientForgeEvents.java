@@ -19,7 +19,7 @@ public class DPClientForgeEvents {
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void getViewMatrices(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
         Minecraft m = Minecraft.getInstance();
         Vec3 view = m.gameRenderer.getMainCamera().getPosition();
         PoseStack poseStack = event.getPoseStack();

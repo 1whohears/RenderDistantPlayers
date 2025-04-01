@@ -1,5 +1,6 @@
 package com.onewhohears.distant_players.client.event.handler;
 
+import com.onewhohears.distant_players.client.core.DPClientManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -12,7 +13,7 @@ public class DPClientModEvents {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-
+        DPClientManager.init();
     }
 
 }

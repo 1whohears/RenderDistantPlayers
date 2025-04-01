@@ -6,9 +6,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
-public final class PacketHandler {
+public final class DPPacketHandler {
 
-    private PacketHandler() {}
+    private DPPacketHandler() {}
 
     private static final String PROTOCOL_VERSION = "1.0";
 

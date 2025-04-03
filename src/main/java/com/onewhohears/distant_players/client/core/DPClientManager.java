@@ -1,6 +1,9 @@
 package com.onewhohears.distant_players.client.core;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Quaternion;
+import com.mojang.math.Vector3f;
+import com.onewhohears.onewholibs.util.math.UtilAngles;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import net.minecraft.client.Camera;
@@ -30,15 +33,20 @@ public final class DPClientManager {
             Entity fake = info.getFakeEntity();
             if (fake == null) return;
             int packedLight = m.getEntityRenderDispatcher().getPackedLightCoords(fake, partialTick);
-            float f = Mth.lerp(partialTick, fake.yRotO, fake.getYRot());
             double dx = Mth.lerp(partialTick, fake.xOld, fake.getX());
             double dy = Mth.lerp(partialTick, fake.yOld, fake.getY());
             double dz = Mth.lerp(partialTick, fake.zOld, fake.getZ());
+            float f = Mth.lerp(partialTick, fake.yRotO, fake.getYRot());
             Vec3 dist = new Vec3(dx, dy, dz).subtract(camera.getPosition());
-            double r = dist.length();
-            float scale = (float) (R_RENDER / r);
+            float scale = (float) (R_RENDER / dist.length());
             poseStack.scale(scale, scale, scale);
             Vec3 d = dist.normalize().scale(R_RENDER/scale);
+
+            Quaternion yawQ = Vector3f.YN.rotationDegrees(f);
+            poseStack.mulPose(yawQ);
+            yawQ.conj();
+            d = UtilAngles.rotateVector(d, yawQ);
+
             m.getEntityRenderDispatcher().render(fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight);
             poseStack.popPose();
         });

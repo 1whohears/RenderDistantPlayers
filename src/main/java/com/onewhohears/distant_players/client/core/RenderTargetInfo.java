@@ -1,7 +1,9 @@
 package com.onewhohears.distant_players.client.core;
 
+import com.mojang.authlib.GameProfile;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -9,11 +11,15 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+
 public class RenderTargetInfo {
 
     private final int id;
+    private final UUID uuid;
     private final String entityTypeId;
     @Nullable private String vehicleTypeId;
+    private String name;
     private Vec3 pos;
     private Vec3 move;
     private float xRot, yRot;
@@ -23,15 +29,15 @@ public class RenderTargetInfo {
 
     protected void tickFakeEntity(@NotNull Entity entity) {
         entity.setOldPosAndRot();
-        entity.setPos(entity.position().add(move));
+        entity.setPos(entity.position().add(getMove()));
     }
 
     protected void updateFakeEntity(@NotNull Entity entity) {
         entity.setOldPosAndRot();
-        entity.setPos(pos);
-        entity.setXRot(xRot);
-        entity.setYRot(yRot);
-        entity.setDeltaMovement(move);
+        entity.setPos(getPos());
+        entity.setXRot(getXRot());
+        entity.setYRot(getYRot());
+        entity.setDeltaMovement(getMove());
     }
 
     @Nullable
@@ -60,10 +66,16 @@ public class RenderTargetInfo {
             invalidEntityType = true;
             return null;
         }
-        Entity e = type.create(Minecraft.getInstance().level);
-        if (e == null) {
-            invalidEntityType = true;
-            return null;
+        Entity e;
+        if (type.toString().equals("entity.minecraft.player")) {
+            GameProfile profile = new GameProfile(getUUID(), getName());
+            e = new RemotePlayer(Minecraft.getInstance().level, profile, null);
+        } else {
+            e = type.create(Minecraft.getInstance().level);
+            if (e == null) {
+                invalidEntityType = true;
+                return null;
+            }
         }
         return e;
     }
@@ -75,6 +87,7 @@ public class RenderTargetInfo {
 
     public void update(RenderTargetInfo newest) {
         lastUpdateTime = System.currentTimeMillis();
+        name = newest.name;
         pos = newest.pos;
         move = newest.move;
         xRot = newest.xRot;
@@ -86,8 +99,9 @@ public class RenderTargetInfo {
 
     public RenderTargetInfo(Entity target) {
         id = target.getId();
-        if (UtilEntity.isPlayer(target)) entityTypeId = "minecraft:pig"; // FIXME make a client side fake player
-        else entityTypeId = UtilEntity.getEntityTypeId(target);
+        uuid = target.getUUID();
+        name = target.getScoreboardName();
+        entityTypeId = UtilEntity.getEntityTypeId(target);
         Entity entity;
         if (target.isPassenger()) {
             entity = target.getRootVehicle();
@@ -105,6 +119,8 @@ public class RenderTargetInfo {
 
     public RenderTargetInfo(FriendlyByteBuf buffer) {
         id = buffer.readInt();
+        uuid = buffer.readUUID();
+        name = buffer.readUtf();
         double px = buffer.readFloat();
         double py = buffer.readFloat();
         double pz = buffer.readFloat();
@@ -122,6 +138,8 @@ public class RenderTargetInfo {
 
     public void encode(FriendlyByteBuf buffer) {
         buffer.writeInt(id);
+        buffer.writeUUID(uuid);
+        buffer.writeUtf(name);
         buffer.writeFloat((float)pos.x);
         buffer.writeFloat((float)pos.y);
         buffer.writeFloat((float)pos.z);
@@ -166,5 +184,13 @@ public class RenderTargetInfo {
     @Nullable
     public String getVehicleTypeId() {
         return vehicleTypeId;
+    }
+
+    public UUID getUUID() {
+        return uuid;
+    }
+
+    public String getName() {
+        return name;
     }
 }

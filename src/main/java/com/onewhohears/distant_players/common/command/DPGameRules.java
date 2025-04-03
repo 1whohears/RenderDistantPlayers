@@ -12,10 +12,10 @@ public class DPGameRules {
     public static GameRules.Key<GameRules.IntegerValue> MAX_VIEW_DISTANCE;
 
     public static void register() {
-        POS_UPDATE_RATE = CustomGameRules.registerInteger("distant_players-posUpdateRate", 5, GameRules.Category.PLAYER);
-        CHECK_VISIBLE_RATE = CustomGameRules.registerInteger("distant_players-checkVisibleRate", 20, GameRules.Category.PLAYER);
-        RAY_CAST_DEPTH = CustomGameRules.registerInteger("distant_players-rayCastDepth", 320, GameRules.Category.PLAYER);
-        MAX_VIEW_DISTANCE = CustomGameRules.registerInteger("distant_players-maxViewDistance", 1000, GameRules.Category.PLAYER);
+        POS_UPDATE_RATE = CustomGameRules.registerInteger("distant_players:posUpdateRate", 5, GameRules.Category.PLAYER);
+        CHECK_VISIBLE_RATE = CustomGameRules.registerInteger("distant_players:checkVisibleRate", 20, GameRules.Category.PLAYER);
+        RAY_CAST_DEPTH = CustomGameRules.registerInteger("distant_players:rayCastDepth", 320, GameRules.Category.PLAYER);
+        MAX_VIEW_DISTANCE = CustomGameRules.registerInteger("distant_players:maxViewDistance", 1000, GameRules.Category.PLAYER);
     }
 
     public static int getPosUpdateRate(MinecraftServer server) {

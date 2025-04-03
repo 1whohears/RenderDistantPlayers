@@ -15,8 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class DPClientManager {
 
-    public static final long MAX_TARGET_AGE = 1100;
-    public static final double R_RENDER = 32;
+    public static final long MAX_TARGET_AGE = 300;
 
     private final IntObjectMap<RenderTargetInfo> targets = new IntObjectHashMap<>();
 
@@ -28,19 +27,22 @@ public final class DPClientManager {
     public void onRender(PoseStack poseStack, Camera camera, float partialTick) {
         Minecraft m = Minecraft.getInstance();
         MultiBufferSource.BufferSource buffer = m.renderBuffers().bufferSource();
+        double renderRadius = getRenderRadius(m);
         targets.forEach((id, info) -> {
             poseStack.pushPose();
             Entity fake = info.getFakeEntity();
             if (fake == null) return;
+
             int packedLight = m.getEntityRenderDispatcher().getPackedLightCoords(fake, partialTick);
             double dx = Mth.lerp(partialTick, fake.xOld, fake.getX());
             double dy = Mth.lerp(partialTick, fake.yOld, fake.getY());
             double dz = Mth.lerp(partialTick, fake.zOld, fake.getZ());
             float f = Mth.lerp(partialTick, fake.yRotO, fake.getYRot());
-            Vec3 dist = new Vec3(dx, dy, dz).subtract(camera.getPosition());
-            float scale = (float) (R_RENDER / dist.length());
+            Vec3 camPos = camera.getPosition();
+            Vec3 dist = new Vec3(dx, dy, dz).subtract(camPos);
+            float scale = (float) (renderRadius / dist.length());
             poseStack.scale(scale, scale, scale);
-            Vec3 d = dist.normalize().scale(R_RENDER/scale);
+            Vec3 d = dist.normalize().scale(renderRadius/scale);
 
             Quaternion yawQ = Vector3f.YN.rotationDegrees(f);
             poseStack.mulPose(yawQ);
@@ -50,6 +52,11 @@ public final class DPClientManager {
             m.getEntityRenderDispatcher().render(fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight);
             poseStack.popPose();
         });
+    }
+
+    private double getRenderRadius(Minecraft m) {
+        int renderDist = m.options.getEffectiveRenderDistance();
+        return Math.max(8, renderDist*8-8);
     }
 
     public void onTick() {

@@ -1,6 +1,7 @@
 package com.onewhohears.distant_players;
 
 import com.mojang.logging.LogUtils;
+import com.onewhohears.distant_players.common.command.DPGameRules;
 import com.onewhohears.distant_players.common.network.DPPacketHandler;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -25,6 +26,7 @@ public class DistantPlayersMod {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         DPPacketHandler.register();
+        DPGameRules.register();
     }
 
 }

@@ -1,5 +1,6 @@
 package com.onewhohears.distant_players.common.core;
 
+import com.onewhohears.distant_players.common.command.DPGameRules;
 import com.onewhohears.distant_players.common.network.DPPacketHandler;
 import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderPlayer;
 import com.onewhohears.onewholibs.util.UtilEntity;
@@ -16,16 +17,13 @@ import java.util.List;
 
 public final class DPServerManager {
 
-    public static final int PAYLOAD_SEND_RATE = 5;
-    public static final int CHECK_VISIBLE_RATE = 20;
-    public static final double MAX_DISTANCE = 1000;
-    public static final double MAX_DISTANCE_SQR = MAX_DISTANCE * MAX_DISTANCE;
-    public static final int BLOCK_CHECK_DEPTH = 320;
-
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
 
     public void checkVisible(MinecraftServer server) {
+        int maxDist = DPGameRules.getViewDistance(server);
+        int maxDistSqr = maxDist * maxDist;
+        int rayCastDepth = DPGameRules.getRayCastDepth(server);
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
         for (int i = 0; i < players.size(); i++) {
             ServerPlayer player1 = players.get(i);
@@ -33,7 +31,7 @@ public final class DPServerManager {
                 ServerPlayer player2 = players.get(j);
                 boolean canSee = false, canSeeChecked = false;
                 if (isPlayerNotTracking(player1, player2)) {
-                    canSee = checkCanSee(player1, player2, false);
+                    canSee = checkCanSee(player1, player2, false, maxDistSqr, rayCastDepth);
                     canSeeChecked = true;
                 }
                 if (canSeeChecked) {
@@ -47,7 +45,8 @@ public final class DPServerManager {
                 } else {
                     getPlayerVisible(player1).remove(player2.getId());
                 }
-                if (isPlayerNotTracking(player2, player1) && checkCanSee(player2, player1, canSee)) {
+                if (isPlayerNotTracking(player2, player1)
+                        && checkCanSee(player2, player1, canSee, maxDistSqr, rayCastDepth)) {
                     getPlayerVisible(player2).add(player1.getId());
                 } else {
                     getPlayerVisible(player2).remove(player1.getId());
@@ -74,10 +73,11 @@ public final class DPServerManager {
         }
     }
 
-    private boolean checkCanSee(ServerPlayer player, ServerPlayer target, boolean skipBlockCheck) {
+    private boolean checkCanSee(ServerPlayer player, ServerPlayer target, boolean skipBlockCheck,
+                                int maxDistSqr, int rayCastDepth) {
         if (!skipBlockCheck) {
-            if (player.distanceToSqr(target) > MAX_DISTANCE_SQR) return false;
-            return UtilEntity.canEntitySeeEntity(player, target, BLOCK_CHECK_DEPTH);
+            if (player.distanceToSqr(target) > maxDistSqr) return false;
+            return UtilEntity.canEntitySeeEntity(player, target, rayCastDepth);
         }
         return true;
     }
@@ -87,8 +87,10 @@ public final class DPServerManager {
     }
 
     public void tick(MinecraftServer server) {
-        if (server.getTickCount() % CHECK_VISIBLE_RATE == 0) checkVisible(server);
-        if (server.getTickCount() % PAYLOAD_SEND_RATE == 0) sendPayloads(server);
+        int checkVisibleRate = DPGameRules.getCheckVisibleRate(server);
+        int posUpdateRate = DPGameRules.getPosUpdateRate(server);
+        if (server.getTickCount() % checkVisibleRate == 0) checkVisible(server);
+        if (server.getTickCount() % posUpdateRate == 0) sendPayloads(server);
     }
 
     public void onPlayerStartTrack(Player player, Player target) {

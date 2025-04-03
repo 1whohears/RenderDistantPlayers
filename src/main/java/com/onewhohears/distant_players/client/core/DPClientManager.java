@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class DPClientManager {
 
-    public static final long MAX_TARGET_AGE = 300;
+    public static final long MAX_TARGET_AGE = 500;
 
     private final IntObjectMap<RenderTargetInfo> targets = new IntObjectHashMap<>();
 

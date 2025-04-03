@@ -1,6 +1,6 @@
 package com.onewhohears.distant_players.common.network.packets.toclient;
 
-import com.onewhohears.distant_players.client.core.ClientRenderPacketInfo;
+import com.onewhohears.distant_players.client.core.RenderTargetInfo;
 import com.onewhohears.distant_players.client.core.DPClientManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
@@ -10,14 +10,14 @@ import java.util.function.Supplier;
 
 public class ToClientRenderPlayer {
 
-    private final ClientRenderPacketInfo info;
+    private final RenderTargetInfo info;
 
     public ToClientRenderPlayer(Player target) {
-        info = new ClientRenderPacketInfo(target);
+        info = new RenderTargetInfo(target);
     }
 
     public ToClientRenderPlayer(FriendlyByteBuf buffer) {
-        info = new ClientRenderPacketInfo(buffer);
+        info = new RenderTargetInfo(buffer);
     }
 
     public void encode(FriendlyByteBuf buffer) {

@@ -206,4 +206,9 @@ public class RenderTargetInfo {
     public String getName() {
         return name;
     }
+
+    @Nullable
+    public ExtraRenderTargetInfo getExtraInfo() {
+        return extraInfo;
+    }
 }

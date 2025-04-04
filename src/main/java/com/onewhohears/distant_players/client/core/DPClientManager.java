@@ -44,10 +44,8 @@ public final class DPClientManager {
             poseStack.scale(scale, scale, scale);
             Vec3 d = dist.normalize().scale(renderRadius/scale);
 
-            Quaternion yawQ = Vector3f.YN.rotationDegrees(f);
-            poseStack.mulPose(yawQ);
-            yawQ.conj();
-            d = UtilAngles.rotateVector(d, yawQ);
+            if (info.getExtraInfo() != null) d = info.getExtraInfo().onRender(fake, poseStack, camera,
+                    f, d, partialTick, buffer, packedLight);
 
             m.getEntityRenderDispatcher().render(fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight);
             poseStack.popPose();

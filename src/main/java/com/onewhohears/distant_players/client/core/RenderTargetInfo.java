@@ -26,10 +26,12 @@ public class RenderTargetInfo {
     private long lastUpdateTime = System.currentTimeMillis();
     @Nullable private Entity entity;
     private boolean invalidEntityType = false;
+    @Nullable private ExtraRenderTargetInfo extraInfo;
 
     protected void tickFakeEntity(@NotNull Entity entity) {
         entity.setOldPosAndRot();
         entity.setPos(entity.position().add(getMove()));
+        if (extraInfo != null) extraInfo.tickFakeEntity(entity);
     }
 
     protected void updateFakeEntity(@NotNull Entity entity) {
@@ -38,6 +40,7 @@ public class RenderTargetInfo {
         entity.setXRot(getXRot());
         entity.setYRot(getYRot());
         entity.setDeltaMovement(getMove());
+        if (extraInfo != null) extraInfo.updateFakeEntity(entity);
     }
 
     @Nullable
@@ -115,6 +118,7 @@ public class RenderTargetInfo {
         if (target.isOnGround() && move.y < 0) move = move.multiply(1, 0, 1);
         xRot = entity.getXRot();
         yRot = entity.getYRot();
+        if (extraInfo != null) extraInfo.getInfoServerSide(target);
     }
 
     public RenderTargetInfo(FriendlyByteBuf buffer) {
@@ -134,6 +138,7 @@ public class RenderTargetInfo {
         entityTypeId = buffer.readUtf();
         boolean isPassenger = buffer.readBoolean();
         if (isPassenger) vehicleTypeId = buffer.readUtf();
+        if (extraInfo != null) extraInfo.getInfoClientSide(buffer);
     }
 
     public void encode(FriendlyByteBuf buffer) {
@@ -151,6 +156,7 @@ public class RenderTargetInfo {
         buffer.writeUtf(entityTypeId);
         buffer.writeBoolean(vehicleTypeId != null);
         if (vehicleTypeId != null) buffer.writeUtf(vehicleTypeId);
+        if (extraInfo != null) extraInfo.encodeInfoServerSide(buffer);
     }
 
     public long getLastUpdateTime(){

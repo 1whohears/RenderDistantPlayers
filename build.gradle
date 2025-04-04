@@ -128,13 +128,22 @@ tasks.named('jar', Jar).configure {
 
 publishing {
     publications {
-        register('mavenJava', MavenPublication) {
+        mavenJava(MavenPublication) {
+            groupId = group
+            artifactId = archivesBaseName
+            version = version
             artifact jar
         }
     }
+    Properties props = new Properties()
+    props.load(new FileInputStream("$projectDir/local.properties"))
     repositories {
         maven {
-            url "file://${project.projectDir}/mcmodsrepo"
+            credentials {
+                username props.repsyMavenUsername
+                password props.repsyMavenPassword
+            }
+            url "https://repo.repsy.io/mvn/1whohears/distant_players"
         }
     }
 }

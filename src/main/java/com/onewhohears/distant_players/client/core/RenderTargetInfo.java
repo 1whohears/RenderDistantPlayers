@@ -96,8 +96,13 @@ public class RenderTargetInfo {
         xRot = newest.xRot;
         yRot = newest.yRot;
         vehicleTypeId = newest.vehicleTypeId;
+        updateExtraInfo();
         Entity fake = getFakeEntity();
         if (fake != null) updateFakeEntity(fake);
+    }
+
+    private void updateExtraInfo() {
+        extraInfo = ExtraInfoManager.get(vehicleTypeId != null ? vehicleTypeId : entityTypeId);
     }
 
     public RenderTargetInfo(Entity target) {
@@ -118,6 +123,7 @@ public class RenderTargetInfo {
         if (target.isOnGround() && move.y < 0) move = move.multiply(1, 0, 1);
         xRot = entity.getXRot();
         yRot = entity.getYRot();
+        updateExtraInfo();
         if (extraInfo != null) extraInfo.getInfoServerSide(target);
     }
 
@@ -138,6 +144,7 @@ public class RenderTargetInfo {
         entityTypeId = buffer.readUtf();
         boolean isPassenger = buffer.readBoolean();
         if (isPassenger) vehicleTypeId = buffer.readUtf();
+        updateExtraInfo();
         if (extraInfo != null) extraInfo.getInfoClientSide(buffer);
     }
 

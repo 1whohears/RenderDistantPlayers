@@ -17,14 +17,7 @@ public class DistantPlayersMod {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public DistantPlayersMod() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
-        modEventBus.addListener(this::commonSetup);
-    }
-
-    private void commonSetup(final FMLCommonSetupEvent event) {
-        DPPacketHandler.register();
-        DPGameRules.register();
     }
 
 }

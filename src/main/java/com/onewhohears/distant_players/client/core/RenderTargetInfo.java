@@ -80,6 +80,7 @@ public class RenderTargetInfo {
                 return null;
             }
         }
+        if (extraInfo != null) extraInfo.setupEntityOnCreate(e);
         return e;
     }
 

@@ -25,6 +25,11 @@ public interface ExtraRenderTargetInfo {
      */
     void updateFakeEntity(@NotNull Entity entity);
     /**
+     * run any other initial setup functions for the entity on the client side.
+     * gets called right after the entity is created from the EntityType#create method.
+     */
+    void setupEntityOnCreate(@NotNull Entity entity);
+    /**
      * use this function to save current state values from the server side entity to fields in the
      * implemented class. These fields will then be encoded in {@link #encodeInfoServerSide(FriendlyByteBuf)}
      */
@@ -57,7 +62,7 @@ public interface ExtraRenderTargetInfo {
      * @return most of the time just return renderDisplacement. However, if the poseStack is modified
      * then renderDisplacement will need to be modified by the inverse of that matrix change.
      */
-    default Vec3 onRender(Entity entity, PoseStack poseStack, Camera camera, float yaw, Vec3 renderDisplacement,
+    default Vec3 onRender(@NotNull Entity entity, PoseStack poseStack, Camera camera, float yaw, Vec3 renderDisplacement,
                           float partialTick, MultiBufferSource buffer, int packedLight) {
         Quaternion yawQ = Vector3f.YN.rotationDegrees(yaw);
         poseStack.mulPose(yawQ);

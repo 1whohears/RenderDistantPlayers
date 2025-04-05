@@ -63,9 +63,12 @@ public class RenderTargetInfo {
 
     @Nullable
     protected Entity createFakeEntity() {
-        EntityType<?> type;
-        if (vehicleTypeId != null) type = UtilEntity.getEntityType(vehicleTypeId, null);
-        else type = UtilEntity.getEntityType(entityTypeId, null);
+        String id = getVehicleOrEntityTypeId();
+        if (DPClientManager.get().isEntityTypeBanned(id)) {
+            invalidEntityType = true;
+            return null;
+        }
+        EntityType<?> type = UtilEntity.getEntityType(id, null);
         if (type == null) {
             invalidEntityType = true;
             return null;
@@ -104,14 +107,14 @@ public class RenderTargetInfo {
     }
 
     private void updateExtraInfo() {
-        String id = getExtraInfoId();
+        String id = getVehicleOrEntityTypeId();
         if (extraInfo == null || !id.equals(prevExtraInfoId)) {
             extraInfo = ExtraInfoManager.get(id);
             prevExtraInfoId = id;
         }
     }
 
-    private String getExtraInfoId() {
+    public String getVehicleOrEntityTypeId() {
         return vehicleTypeId != null ? vehicleTypeId : entityTypeId;
     }
 
@@ -220,5 +223,9 @@ public class RenderTargetInfo {
     @Nullable
     public ExtraRenderTargetInfo getExtraInfo() {
         return extraInfo;
+    }
+
+    public void setInvalidEntityType() {
+        invalidEntityType = true;
     }
 }

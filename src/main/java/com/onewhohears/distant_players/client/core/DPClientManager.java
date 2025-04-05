@@ -1,23 +1,30 @@
 package com.onewhohears.distant_players.client.core;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Quaternion;
-import com.mojang.math.Vector3f;
-import com.onewhohears.onewholibs.util.math.UtilAngles;
+import com.mojang.logging.LogUtils;
+import com.onewhohears.onewholibs.util.UtilEntity;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
+import net.minecraft.ReportedException;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import org.slf4j.Logger;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public final class DPClientManager {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final long MAX_TARGET_AGE = 500;
 
     private final IntObjectMap<RenderTargetInfo> targets = new IntObjectHashMap<>();
+    private final Set<String> bannedEntityTypes = new HashSet<>();
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
         if (!targets.containsKey(info.getId())) targets.put(info.getId(), info);
@@ -47,7 +54,16 @@ public final class DPClientManager {
             if (info.getExtraInfo() != null) d = info.getExtraInfo().onRender(fake, poseStack, camera,
                     f, d, partialTick, buffer, packedLight);
 
-            m.getEntityRenderDispatcher().render(fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight);
+            try {
+                m.getEntityRenderDispatcher().render(fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight);
+            } catch (ReportedException e) {
+                banEntityType(fake);
+                info.setInvalidEntityType();
+                LOGGER.error("Attempted to render a fake entity and an error was thrown. " +
+                        "Will not try to render this entity type until the game is reloaded. " +
+                        "The error that would have crashed the game is the following.");
+                LOGGER.error(e.getReport().getFriendlyReport());
+            }
             poseStack.popPose();
         });
     }
@@ -61,6 +77,14 @@ public final class DPClientManager {
         long currentTime = System.currentTimeMillis();
         targets.entrySet().removeIf(entry->currentTime-entry.getValue().getLastUpdateTime() > MAX_TARGET_AGE);
         targets.forEach((id, info) -> info.tick());
+    }
+
+    public boolean isEntityTypeBanned(String type) {
+        return bannedEntityTypes.contains(type);
+    }
+
+    public void banEntityType(Entity entity) {
+        bannedEntityTypes.add(UtilEntity.getEntityTypeId(entity));
     }
 
     private static DPClientManager INSTANCE;

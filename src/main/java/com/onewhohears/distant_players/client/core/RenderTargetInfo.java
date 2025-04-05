@@ -27,6 +27,7 @@ public class RenderTargetInfo {
     @Nullable private Entity entity;
     private boolean invalidEntityType = false;
     @Nullable private ExtraRenderTargetInfo extraInfo;
+    private String prevExtraInfoId = "";
 
     protected void tickFakeEntity(@NotNull Entity entity) {
         entity.setOldPosAndRot();
@@ -97,13 +98,21 @@ public class RenderTargetInfo {
         xRot = newest.xRot;
         yRot = newest.yRot;
         vehicleTypeId = newest.vehicleTypeId;
-        updateExtraInfo();
+        extraInfo = newest.extraInfo;
         Entity fake = getFakeEntity();
         if (fake != null) updateFakeEntity(fake);
     }
 
     private void updateExtraInfo() {
-        extraInfo = ExtraInfoManager.get(vehicleTypeId != null ? vehicleTypeId : entityTypeId);
+        String id = getExtraInfoId();
+        if (extraInfo == null || !id.equals(prevExtraInfoId)) {
+            extraInfo = ExtraInfoManager.get(id);
+            prevExtraInfoId = id;
+        }
+    }
+
+    private String getExtraInfoId() {
+        return vehicleTypeId != null ? vehicleTypeId : entityTypeId;
     }
 
     public RenderTargetInfo(Entity target) {

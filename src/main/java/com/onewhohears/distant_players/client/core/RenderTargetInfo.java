@@ -125,7 +125,7 @@ public class RenderTargetInfo {
         xRot = entity.getXRot();
         yRot = entity.getYRot();
         updateExtraInfo();
-        if (extraInfo != null) extraInfo.getInfoServerSide(target);
+        if (extraInfo != null) extraInfo.getInfoServerSide(entity);
     }
 
     public RenderTargetInfo(FriendlyByteBuf buffer) {

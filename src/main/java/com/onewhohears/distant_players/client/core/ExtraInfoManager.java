@@ -1,7 +1,7 @@
 package com.onewhohears.distant_players.client.core;
 
 import net.minecraft.world.entity.EntityType;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,10 +19,13 @@ public class ExtraInfoManager {
         extras.put(EntityType.getKey(type).toString(), extra);
     }
 
-    @Nullable
+    /**
+     * returns a registered {@link ExtraRenderTargetInfo} or the default
+     * {@link ExtraRenderTargetInfo.DefaultRenderInfo} which only handles yaw rotation rendering.
+     */
+    @NotNull
     public static ExtraRenderTargetInfo get(String entityTypeId) {
-        if (!extras.containsKey(entityTypeId)) return null;
-        return extras.get(entityTypeId).get();
+        return extras.getOrDefault(entityTypeId, ExtraRenderTargetInfo.DefaultRenderInfo::new).get();
     }
 
 }

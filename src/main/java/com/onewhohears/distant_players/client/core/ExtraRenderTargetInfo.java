@@ -69,4 +69,19 @@ public interface ExtraRenderTargetInfo {
         yawQ.conj();
         return UtilAngles.rotateVector(renderDisplacement, yawQ);
     }
+
+    class DefaultRenderInfo implements ExtraRenderTargetInfo {
+        @Override
+        public void tickFakeEntity(@NotNull Entity entity) {}
+        @Override
+        public void updateFakeEntity(@NotNull Entity entity) {}
+        @Override
+        public void setupEntityOnCreate(@NotNull Entity entity) {}
+        @Override
+        public void getInfoServerSide(@NotNull Entity entity) {}
+        @Override
+        public void getInfoClientSide(FriendlyByteBuf buffer) {}
+        @Override
+        public void encodeInfoServerSide(FriendlyByteBuf buffer) {}
+    }
 }

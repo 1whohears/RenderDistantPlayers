@@ -3,6 +3,7 @@ package com.onewhohears.distant_players.client.core;
 import com.mojang.authlib.GameProfile;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
@@ -63,6 +64,9 @@ public class RenderTargetInfo {
 
     @Nullable
     protected Entity createFakeEntity() {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) return null;
+
         String id = getVehicleOrEntityTypeId();
         if (DPClientManager.get().isEntityTypeBanned(id)) {
             invalidEntityType = true;
@@ -76,9 +80,9 @@ public class RenderTargetInfo {
         Entity e;
         if (type.toString().equals("entity.minecraft.player")) {
             GameProfile profile = new GameProfile(getUUID(), getName());
-            e = new RemotePlayer(Minecraft.getInstance().level, profile, null);
+            e = new RemotePlayer(level, profile, null);
         } else {
-            e = type.create(Minecraft.getInstance().level);
+            e = type.create(level);
             if (e == null) {
                 invalidEntityType = true;
                 return null;

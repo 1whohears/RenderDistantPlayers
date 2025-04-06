@@ -5,7 +5,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.GameRules;
 
 public class DPGameRules {
-
     public static GameRules.Key<GameRules.IntegerValue> POS_UPDATE_RATE;
     public static GameRules.Key<GameRules.IntegerValue> CHECK_VISIBLE_RATE;
     public static GameRules.Key<GameRules.IntegerValue> RAY_CAST_DEPTH;
@@ -33,5 +32,4 @@ public class DPGameRules {
     public static int getViewDistance(MinecraftServer server) {
         return server.getGameRules().getInt(MAX_VIEW_DISTANCE);
     }
-
 }

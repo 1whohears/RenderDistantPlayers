@@ -1,6 +1,7 @@
-package com.onewhohears.distant_players.client.core;
+package com.onewhohears.distant_players.common.core;
 
 import com.mojang.authlib.GameProfile;
+import com.onewhohears.distant_players.client.core.DPClientManager;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -14,8 +15,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
+/**
+ * Data-carrying class intended to ferry information about an entity from serverside to clientside for the
+ * purposes of rendering. Used to update entities on clients.
+ */
 public class RenderTargetInfo {
-
     private final int id;
     private final UUID uuid;
     private final String entityTypeId;
@@ -68,16 +72,21 @@ public class RenderTargetInfo {
         if (level == null) return null;
 
         String id = getVehicleOrEntityTypeId();
+
         if (DPClientManager.get().isEntityTypeBanned(id)) {
             invalidEntityType = true;
             return null;
         }
+
         EntityType<?> type = UtilEntity.getEntityType(id, null);
+
         if (type == null) {
             invalidEntityType = true;
             return null;
         }
+
         Entity e;
+
         if (type.toString().equals("entity.minecraft.player")) {
             GameProfile profile = new GameProfile(getUUID(), getName());
             e = new RemotePlayer(level, profile, null);
@@ -88,7 +97,9 @@ public class RenderTargetInfo {
                 return null;
             }
         }
+
         if (extraInfo != null) extraInfo.setupEntityOnCreate(e);
+
         return e;
     }
 

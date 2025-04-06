@@ -15,8 +15,12 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.List;
 
+/**
+ * Brain of the mod. Responsible for coordinating tracked entity information and updating the information in
+ * the {@link com.onewhohears.distant_players.client.core.DPClientManager}. Sends entity information to other
+ * clients, and doesn't when it's deemed that they shouldn't be able to see each other.
+ */
 public final class DPServerManager {
-
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
 

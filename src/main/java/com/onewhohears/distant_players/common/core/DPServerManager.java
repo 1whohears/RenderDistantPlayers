@@ -15,6 +15,16 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.List;
 
+/*
+   TODO - To be honest, I think it'll be fine to leave culling on the clientside. It's already possible to see entities
+    through walls with mods or (if one has them installed) cheats. I don't see much of a point attempting to stop this
+    on serverside when the only advantage conferred to someone cheating that way is the same with or without having
+    this mod installed; that is, being able to see players from anywhere. This is, in my eyes, a problem that is
+    "further up the chain", so to speak.
+ */
+
+// FIXME - There should probably be an instance for every Level on the MinecraftServer, or some other impl that
+//  that considers players in different dimensions
 /**
  * Brain of the mod. Responsible for coordinating tracked entity information and updating the information in
  * the {@link com.onewhohears.distant_players.client.core.DPClientManager}. Sends entity information to other

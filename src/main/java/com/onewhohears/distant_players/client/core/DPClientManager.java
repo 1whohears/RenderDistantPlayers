@@ -23,6 +23,9 @@ import org.slf4j.Logger;
 import java.util.HashSet;
 import java.util.Set;
 
+// FIXME - Armour does not render
+// FIXME - Head rot is not correct when wearing dragon head at least b/w players, test with other entities??
+// FIXME - Head rot is stuttering
 /**
  * Heart of the mod. Rendering logic takes place here. The singleton instance is continually updated to
  * reflect the serverside game-state and renders stuff accordingly.
@@ -96,6 +99,7 @@ public final class DPClientManager {
         });
     }
 
+    // TODO - Configurable
     private double getRenderRadius(Minecraft m) {
         int renderDist = m.options.getEffectiveRenderDistance();
         return Math.max(8, renderDist * 8 - 8);

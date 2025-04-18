@@ -1,5 +1,6 @@
 package com.onewhohears.distant_players.client.core;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
 import com.onewhohears.distant_players.common.core.RenderTargetInfo;
@@ -9,10 +10,14 @@ import io.netty.util.collection.IntObjectMap;
 import net.minecraft.ReportedException;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
@@ -21,6 +26,10 @@ import java.util.Set;
 /**
  * Heart of the mod. Rendering logic takes place here. The singleton instance is continually updated to
  * reflect the serverside game-state and renders stuff accordingly.
+ * <br><br>
+ * {@link RenderTargetInfo} takes this as a parameter in a couple of its methods. According to my limited knowledge of
+ * Java, this should be fine at runtime even if this class doesn't exist on serverside. That said, I'm making a note
+ * here in case some change(s) related to this class causes another invalid dist exception
  */
 public final class DPClientManager {
     private static DPClientManager INSTANCE;
@@ -36,7 +45,7 @@ public final class DPClientManager {
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
         if (!this.targets.containsKey(info.getId())) this.targets.put(info.getId(), info);
-        else this.targets.get(info.getId()).update(info);
+        else this.targets.get(info.getId()).update(info, this);
     }
 
     public void renderTargets(PoseStack poseStack, Camera camera, float partialTick) {
@@ -48,7 +57,7 @@ public final class DPClientManager {
         this.targets.forEach((id, info) -> {
             poseStack.pushPose();
 
-            Entity fake = info.getFakeEntity();
+            Entity fake = info.getFakeEntity(this);
             if (fake == null) return;
 
             int packedLight = m.getEntityRenderDispatcher().getPackedLightCoords(fake, partialTick);
@@ -98,7 +107,48 @@ public final class DPClientManager {
         this.targets.entrySet().removeIf(
                 entry -> (currentTime - entry.getValue().getLastUpdateTime()) > MAX_TARGET_AGE
         );
-        this.targets.forEach((id, info) -> info.tick());
+
+        this.targets.forEach((id, info) -> {
+            Entity fake = info.getFakeEntity(this);
+            if (fake != null) info.tickFakeEntity(fake);
+        });
+    }
+
+    @Nullable
+    public Entity createFakeEntity(RenderTargetInfo info) {
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null) return null;
+
+        String id = info.getVehicleOrEntityTypeId();
+
+        if (DPClientManager.get().isEntityTypeBanned(id)) {
+            info.setInvalidEntityType();
+            return null;
+        }
+
+        EntityType<?> type = UtilEntity.getEntityType(id, null);
+
+        if (type == null) {
+            info.setInvalidEntityType();
+            return null;
+        }
+
+        Entity e;
+
+        if (type.toString().equals("entity.minecraft.player")) {
+            GameProfile profile = new GameProfile(info.getUUID(), info.getName());
+            e = new RemotePlayer(level, profile, null);
+        } else {
+            e = type.create(level);
+            if (e == null) {
+                info.setInvalidEntityType();
+                return null;
+            }
+        }
+
+        if (info.getExtraInfo() != null) info.getExtraInfo().setupEntityOnCreate(e);
+
+        return e;
     }
 
     public boolean isEntityTypeBanned(String type) {

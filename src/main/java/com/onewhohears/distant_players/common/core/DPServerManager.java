@@ -21,6 +21,16 @@ import java.util.List;
  * clients, and doesn't when it's deemed that they shouldn't be able to see each other.
  */
 public final class DPServerManager {
+    private static DPServerManager INSTANCE;
+
+    public static void init() {
+        INSTANCE = new DPServerManager();
+    }
+
+    public static DPServerManager get() {
+        return INSTANCE;
+    }
+
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
 
@@ -60,7 +70,7 @@ public final class DPServerManager {
     }
 
     public void sendPayload(ServerPlayer player, ServerPlayer target) {
-        DPPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(()->player), new ToClientRenderPlayer(target));
+        DPPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ToClientRenderPlayer(target));
     }
 
     public void sendPayloads(MinecraftServer server) {
@@ -116,31 +126,25 @@ public final class DPServerManager {
     }
 
     private IntSet getPlayerTracks(Player player) {
-        if (!tracks.containsKey(player.getId())) {
-            IntSet set = new IntArraySet();
-            tracks.put(player.getId(), set);
-            return set;
-        }
-        return tracks.get(player.getId());
+        return this.tracks.computeIfAbsent(
+                player.getId(),
+                (id) -> {
+                    IntSet set = new IntArraySet();
+                    this.tracks.put(player.getId(), set);
+                    return set;
+                }
+        );
     }
 
     private IntSet getPlayerVisible(Player player) {
-        if (!visible.containsKey(player.getId())) {
-            IntSet set = new IntArraySet();
-            visible.put(player.getId(), set);
-            return set;
-        }
-        return visible.get(player.getId());
-    }
-
-    private static DPServerManager INSTANCE;
-
-    public static void init() {
-        INSTANCE = new DPServerManager();
-    }
-
-    public static DPServerManager get() {
-        return INSTANCE;
+        return this.visible.computeIfAbsent(
+                player.getId(),
+                (id) -> {
+                    IntSet set = new IntArraySet();
+                    this.visible.put(player.getId(), set);
+                    return set;
+                }
+        );
     }
 
     private DPServerManager() {}

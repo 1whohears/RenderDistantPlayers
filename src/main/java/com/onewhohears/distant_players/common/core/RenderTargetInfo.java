@@ -1,14 +1,9 @@
 package com.onewhohears.distant_players.common.core;
 
-import com.mojang.authlib.GameProfile;
 import com.onewhohears.distant_players.client.core.DPClientManager;
 import com.onewhohears.onewholibs.util.UtilEntity;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,13 +29,13 @@ public class RenderTargetInfo {
     @Nullable private ExtraRenderTargetInfo extraInfo;
     private String prevExtraInfoId = "";
 
-    protected void tickFakeEntity(@NotNull Entity entity) {
+    public void tickFakeEntity(@NotNull Entity entity) {
         entity.setOldPosAndRot();
         entity.setPos(entity.position().add(getMove()));
         if (extraInfo != null) extraInfo.tickFakeEntity(entity);
     }
 
-    protected void updateFakeEntity(@NotNull Entity entity) {
+    public void updateFakeEntity(@NotNull Entity entity) {
         entity.setOldPosAndRot();
         entity.setPos(getPos());
         entity.setXRot(getXRot());
@@ -50,10 +45,10 @@ public class RenderTargetInfo {
     }
 
     @Nullable
-    public Entity getFakeEntity() {
+    public Entity getFakeEntity(DPClientManager clientManager) {
         if (invalidEntityType) return null;
         if (didEntityChange()) {
-            entity = createFakeEntity();
+            entity = clientManager.createFakeEntity(this);
             return entity;
         }
         return entity;
@@ -66,49 +61,7 @@ public class RenderTargetInfo {
         return vehicleTypeId == null && !type.equals(entityTypeId);
     }
 
-    @Nullable
-    protected Entity createFakeEntity() {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) return null;
-
-        String id = getVehicleOrEntityTypeId();
-
-        if (DPClientManager.get().isEntityTypeBanned(id)) {
-            invalidEntityType = true;
-            return null;
-        }
-
-        EntityType<?> type = UtilEntity.getEntityType(id, null);
-
-        if (type == null) {
-            invalidEntityType = true;
-            return null;
-        }
-
-        Entity e;
-
-        if (type.toString().equals("entity.minecraft.player")) {
-            GameProfile profile = new GameProfile(getUUID(), getName());
-            e = new RemotePlayer(level, profile, null);
-        } else {
-            e = type.create(level);
-            if (e == null) {
-                invalidEntityType = true;
-                return null;
-            }
-        }
-
-        if (extraInfo != null) extraInfo.setupEntityOnCreate(e);
-
-        return e;
-    }
-
-    public void tick() {
-        Entity fake = getFakeEntity();
-        if (fake != null) tickFakeEntity(fake);
-    }
-
-    public void update(RenderTargetInfo newest) {
+    public void update(RenderTargetInfo newest, DPClientManager clientManager) {
         lastUpdateTime = System.currentTimeMillis();
         name = newest.name;
         pos = newest.pos;
@@ -117,7 +70,7 @@ public class RenderTargetInfo {
         yRot = newest.yRot;
         vehicleTypeId = newest.vehicleTypeId;
         extraInfo = newest.extraInfo;
-        Entity fake = getFakeEntity();
+        Entity fake = getFakeEntity(clientManager);
         if (fake != null) updateFakeEntity(fake);
     }
 

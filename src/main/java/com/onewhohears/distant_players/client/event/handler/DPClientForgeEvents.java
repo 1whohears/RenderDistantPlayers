@@ -8,20 +8,25 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = DistantPlayersMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = DistantPlayersMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class DPClientForgeEvents {
-
+    /**
+     * Executes mod logic at the end of every (client) tick.
+     */
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.START) return;
-        DPClientManager.get().onTick();
+        DPClientManager.get().tick();
     }
 
+    /**
+     * Executes rendering of distant entities on the correct matrix stack.
+     */
     @SubscribeEvent()
     public static void getViewMatrices(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
         event.getPoseStack().pushPose();
-        DPClientManager.get().onRender(event.getPoseStack(), event.getCamera(), event.getPartialTick());
+        DPClientManager.get().renderTargets(event.getPoseStack(), event.getCamera(), event.getPartialTick());
         event.getPoseStack().popPose();
     }
 

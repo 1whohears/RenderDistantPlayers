@@ -18,7 +18,7 @@ public final class DPPacketHandler {
 
     public static void register() {
         SimpleChannel net = NetworkRegistry.ChannelBuilder
-                .named(new ResourceLocation(DistantPlayersMod.MODID, "messages"))
+                .named(new ResourceLocation(DistantPlayersMod.MOD_ID, "messages"))
                 .networkProtocolVersion(() -> PROTOCOL_VERSION)
                 .clientAcceptedVersions(s -> s.equals(PROTOCOL_VERSION))
                 .serverAcceptedVersions(s -> s.equals(PROTOCOL_VERSION))

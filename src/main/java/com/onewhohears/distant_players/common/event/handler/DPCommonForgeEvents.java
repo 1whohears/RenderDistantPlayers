@@ -11,9 +11,8 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = DistantPlayersMod.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(modid = DistantPlayersMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class DPCommonForgeEvents {
-
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void startTrackingEvent(PlayerEvent.StartTracking event) {
         if (event.getEntity().getLevel().isClientSide()) return;
@@ -49,5 +48,4 @@ public class DPCommonForgeEvents {
     public static void serverTick(TickEvent.ServerTickEvent event) {
         DPServerManager.get().tick(event.getServer());
     }
-
 }

@@ -15,7 +15,31 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.List;
 
+/*
+   TODO - To be honest, I think it'll be fine to leave culling on the clientside. It's already possible to see entities
+    through walls with mods or (if one has them installed) cheats. I don't see much of a point attempting to stop this
+    on serverside when the only advantage conferred to someone cheating that way is the same with or without having
+    this mod installed; that is, being able to see players from anywhere. This is, in my eyes, a problem that is
+    "further up the chain", so to speak.
+ */
+
+// FIXME - There should probably be an instance for every Level on the MinecraftServer, or some other impl that
+//  that considers players in different dimensions
+/**
+ * Brain of the mod. Responsible for coordinating tracked entity information and updating the information in
+ * the {@link com.onewhohears.distant_players.client.core.DPClientManager}. Sends entity information to other
+ * clients, and doesn't when it's deemed that they shouldn't be able to see each other.
+ */
 public final class DPServerManager {
+    private static DPServerManager INSTANCE;
+
+    public static void init() {
+        INSTANCE = new DPServerManager();
+    }
+
+    public static DPServerManager get() {
+        return INSTANCE;
+    }
 
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
@@ -56,7 +80,7 @@ public final class DPServerManager {
     }
 
     public void sendPayload(ServerPlayer player, ServerPlayer target) {
-        DPPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(()->player), new ToClientRenderPlayer(target));
+        DPPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ToClientRenderPlayer(target));
     }
 
     public void sendPayloads(MinecraftServer server) {
@@ -112,31 +136,25 @@ public final class DPServerManager {
     }
 
     private IntSet getPlayerTracks(Player player) {
-        if (!tracks.containsKey(player.getId())) {
-            IntSet set = new IntArraySet();
-            tracks.put(player.getId(), set);
-            return set;
-        }
-        return tracks.get(player.getId());
+        return this.tracks.computeIfAbsent(
+                player.getId(),
+                (id) -> {
+                    IntSet set = new IntArraySet();
+                    this.tracks.put(player.getId(), set);
+                    return set;
+                }
+        );
     }
 
     private IntSet getPlayerVisible(Player player) {
-        if (!visible.containsKey(player.getId())) {
-            IntSet set = new IntArraySet();
-            visible.put(player.getId(), set);
-            return set;
-        }
-        return visible.get(player.getId());
-    }
-
-    private static DPServerManager INSTANCE;
-
-    public static void init() {
-        INSTANCE = new DPServerManager();
-    }
-
-    public static DPServerManager get() {
-        return INSTANCE;
+        return this.visible.computeIfAbsent(
+                player.getId(),
+                (id) -> {
+                    IntSet set = new IntArraySet();
+                    this.visible.put(player.getId(), set);
+                    return set;
+                }
+        );
     }
 
     private DPServerManager() {}

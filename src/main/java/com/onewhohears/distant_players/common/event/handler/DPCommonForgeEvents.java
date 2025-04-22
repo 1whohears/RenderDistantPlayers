@@ -1,17 +1,25 @@
 package com.onewhohears.distant_players.common.event.handler;
 
+import com.mojang.logging.LogUtils;
 import com.onewhohears.distant_players.DistantPlayersMod;
 import com.onewhohears.distant_players.common.core.DPServerManager;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.slf4j.Logger;
 
 @Mod.EventBusSubscriber(modid = DistantPlayersMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class DPCommonForgeEvents {
+    public static Logger LOGGER = LogUtils.getLogger();
+
     // TODO - Some system to prevent overzealous sending of packets (for the sake of performance)
     //  Perhaps distances exceeding some amount? Maybe based on client requests for info? Since armour and items do not
     //  render properly, this data must be sent to clients... I don't want this to be done if not necessary - for the
@@ -20,18 +28,30 @@ public class DPCommonForgeEvents {
     //  players at the expense of performance.
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void startTrackingEvent(PlayerEvent.StartTracking event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!(event.getTarget() instanceof ServerPlayer target)) return;
+        if (!(event.getEntity() instanceof ServerPlayer player))
+            return;
 
-        DPServerManager.get().removeEntityFromPlayerView(player, target);
+        if (event.getTarget() instanceof ServerPlayer || DPServerManager.get().isPlayerlessEntity(event.getTarget()))
+            DPServerManager.get().removeEntityFromPlayerView(player, event.getTarget());
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void stopTrackingEvent(PlayerEvent.StopTracking event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!(event.getTarget() instanceof ServerPlayer target)) return;
+        if (!(event.getEntity() instanceof ServerPlayer player))
+            return;
+        if (event.getTarget() instanceof ServerPlayer || DPServerManager.get().isPlayerlessEntity(event.getTarget()))
+            DPServerManager.get().addEntityToPlayerView(player, event.getTarget());
+    }
 
-        DPServerManager.get().addEntityToPlayerView(player, target);
+    // FIXME - This doesn't feel very robust.
+    @SubscribeEvent(priority = EventPriority.NORMAL)
+    public static void entityRemovedEvent(EntityLeaveLevelEvent event) {
+        if (!(event.getEntity().level instanceof ServerLevel level) || event.getEntity() instanceof Player) return;
+
+        DPServerManager.get().removePlayerlessEntity(event.getEntity());
+        level.players().forEach(
+                player -> DPServerManager.get().removeEntityFromPlayerView(player, event.getEntity())
+        );
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
@@ -48,6 +68,16 @@ public class DPCommonForgeEvents {
                     DPServerManager.get().addEntityToPlayerView(player, otherPlayer);
                 }
         );
+
+        for (int id : DPServerManager.get().getPlayerlessEntitiesCopy(player.getLevel())) {
+            Entity toAdd = player.getLevel().getEntity(id);
+            if (toAdd == null) {
+                LOGGER.error("Skipping null Entity with ID {}", id);
+                continue;
+            }
+
+            DPServerManager.get().addEntityToPlayerView(player, toAdd);
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)

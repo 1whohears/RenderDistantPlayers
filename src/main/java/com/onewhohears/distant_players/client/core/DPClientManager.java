@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import java.util.HashSet;
 import java.util.Set;
 
-// FIXME - Armour does not render
-// FIXME - Head rot is not correct when wearing dragon head at least b/w players, test with other entities??
+// FIXME - Armour and items do not render
+// FIXME - Entities entering fog fade out, then suddenly pop in to existence
 // FIXME - Head rot is stuttering
 /**
  * Heart of the mod. Rendering logic takes place here. The singleton instance is continually updated to
@@ -47,8 +47,10 @@ public final class DPClientManager {
     private final Set<String> bannedEntityTypes = new HashSet<>();
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
-        if (!this.targets.containsKey(info.getId())) this.targets.put(info.getId(), info);
-        else this.targets.get(info.getId()).update(info, this);
+        if (!this.targets.containsKey(info.getId()))
+            this.targets.put(info.getId(), info);
+        else
+            this.targets.get(info.getId()).update(info, this);
     }
 
     public void renderTargets(PoseStack poseStack, Camera camera, float partialTick) {

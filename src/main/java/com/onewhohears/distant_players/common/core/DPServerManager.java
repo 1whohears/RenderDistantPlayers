@@ -10,6 +10,7 @@ import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.PacketDistributor;
 
@@ -41,39 +42,84 @@ public final class DPServerManager {
         return INSTANCE;
     }
 
-    private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
+    private final IntObjectMap<IntSet> distantEntities = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
 
-    public void checkVisible(MinecraftServer server) {
+    public void addEntityToPlayerView(ServerPlayer player, Entity target) {
+        this.getDistantEntitiesForPlayer(player)
+                .add(target.getId());
+    }
+
+    public void removeEntityFromPlayerView(ServerPlayer player, Entity target) {
+        this.getDistantEntitiesForPlayer(player)
+                .remove(target.getId());
+    }
+
+    public boolean isEntityInPlayerView(ServerPlayer player, Entity target) {
+        return !this.getDistantEntitiesForPlayer(player).contains(target.getId());
+    }
+
+    private IntSet getDistantEntitiesForPlayer(ServerPlayer player) {
+        return this.distantEntities.computeIfAbsent(
+                player.getId(),
+                (id) -> new IntArraySet()
+        );
+    }
+
+    public void addEntityToVisibility(ServerPlayer player, Entity target) {
+        this.getPlayerVisibility(player)
+                .add(target.getId());
+    }
+
+    public void removeEntityFromVisibility(ServerPlayer player, Entity target) {
+        this.getPlayerVisibility(player)
+                .remove(target.getId());
+    }
+
+    private IntSet getPlayerVisibility(ServerPlayer player) {
+        return this.visible.computeIfAbsent(
+                player.getId(),
+                (id) -> new IntArraySet()
+        );
+    }
+
+    public void checkVisibility(MinecraftServer server) {
         int maxDist = DPGameRules.getViewDistance(server);
         int maxDistSqr = maxDist * maxDist;
         int rayCastDepth = DPGameRules.getRayCastDepth(server);
+
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
         for (int i = 0; i < players.size(); i++) {
             ServerPlayer player1 = players.get(i);
+
             for (int j = i + 1; j < players.size(); j++) {
                 ServerPlayer player2 = players.get(j);
                 boolean canSee = false, canSeeChecked = false;
-                if (isPlayerNotTracking(player1, player2)) {
-                    canSee = checkCanSee(player1, player2, false, maxDistSqr, rayCastDepth);
+
+                if (this.isEntityInPlayerView(player1, player2)) {
+                    canSee = this.checkCanSee(player1, player2, false, maxDistSqr, rayCastDepth);
                     canSeeChecked = true;
                 }
+
                 if (canSeeChecked) {
                     if (canSee) {
-                        getPlayerVisible(player1).add(player2.getId());
+                        this.addEntityToVisibility(player1, player2);
                     } else {
-                        getPlayerVisible(player1).remove(player2.getId());
-                        getPlayerVisible(player2).remove(player1.getId());
+                        this.removeEntityFromVisibility(player1, player2);
+                        this.removeEntityFromVisibility(player2, player1);
                         continue;
                     }
                 } else {
-                    getPlayerVisible(player1).remove(player2.getId());
+                    this.removeEntityFromVisibility(player1, player2);
                 }
-                if (isPlayerNotTracking(player2, player1)
-                        && checkCanSee(player2, player1, canSee, maxDistSqr, rayCastDepth)) {
-                    getPlayerVisible(player2).add(player1.getId());
+
+                if (
+                        this.isEntityInPlayerView(player2, player1)
+                        && this.checkCanSee(player2, player1, canSee, maxDistSqr, rayCastDepth)
+                ) {
+                    this.addEntityToVisibility(player2,  player1);
                 } else {
-                    getPlayerVisible(player2).remove(player1.getId());
+                    this.removeEntityFromVisibility(player2, player1);
                 }
             }
         }
@@ -89,10 +135,10 @@ public final class DPServerManager {
             ServerPlayer player1 = players.get(i);
             for (int j = i + 1; j < players.size(); j++) {
                 ServerPlayer player2 = players.get(j);
-                if (getPlayerVisible(player1).contains(player2.getId()))
-                    sendPayload(player1, player2);
-                if (getPlayerVisible(player2).contains(player1.getId()))
-                    sendPayload(player2, player1);
+                if (this.getPlayerVisibility(player1).contains(player2.getId()))
+                    this.sendPayload(player1, player2);
+                if (this.getPlayerVisibility(player2).contains(player1.getId()))
+                    this.sendPayload(player2, player1);
             }
         }
     }
@@ -106,55 +152,21 @@ public final class DPServerManager {
         return true;
     }
 
-    public boolean isPlayerNotTracking(ServerPlayer player, ServerPlayer target) {
-        return !getPlayerTracks(player).contains(target.getId());
-    }
-
     public void tick(MinecraftServer server) {
         int checkVisibleRate = DPGameRules.getCheckVisibleRate(server);
         int posUpdateRate = DPGameRules.getPosUpdateRate(server);
-        if (server.getTickCount() % checkVisibleRate == 0) checkVisible(server);
-        if (server.getTickCount() % posUpdateRate == 0) sendPayloads(server);
+        if (server.getTickCount() % checkVisibleRate == 0) this.checkVisibility(server);
+        if (server.getTickCount() % posUpdateRate == 0) this.sendPayloads(server);
     }
 
-    public void onPlayerStartTrack(Player player, Player target) {
-        getPlayerTracks(player).add(target.getId());
-        getPlayerVisible(player).remove(target.getId());
-    }
-
-    public void onPlayerStopTrack(Player player, Player target) {
-        getPlayerTracks(player).remove(target.getId());
-    }
-
+    // TODO - ?
     public void onPlayerLogIn(Player player) {
 
     }
 
-    public void onPlayerLogOut(Player player) {
-        tracks.remove(player.getId());
-        visible.remove(player.getId());
-    }
-
-    private IntSet getPlayerTracks(Player player) {
-        return this.tracks.computeIfAbsent(
-                player.getId(),
-                (id) -> {
-                    IntSet set = new IntArraySet();
-                    this.tracks.put(player.getId(), set);
-                    return set;
-                }
-        );
-    }
-
-    private IntSet getPlayerVisible(Player player) {
-        return this.visible.computeIfAbsent(
-                player.getId(),
-                (id) -> {
-                    IntSet set = new IntArraySet();
-                    this.visible.put(player.getId(), set);
-                    return set;
-                }
-        );
+    public void onPlayerLogOut(ServerPlayer player) {
+        this.distantEntities.remove(player.getId());
+        this.visible.remove(player.getId());
     }
 
     private DPServerManager() {}

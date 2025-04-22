@@ -24,6 +24,7 @@ public class RenderTargetInfo {
     private Vec3 move;
     private float xRot, yRot;
     private long lastUpdateTime = System.currentTimeMillis();
+    // FIXME - I believe caching entities like this could potentially cause memory leaks. Verify
     @Nullable private Entity entity;
     private boolean invalidEntityType = false;
     @Nullable private ExtraRenderTargetInfo extraInfo;

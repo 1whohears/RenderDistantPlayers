@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "com.onewhohears.distant_players.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "distant_players.refmap.json",
+  "mixins": [
+    "ChunkMapMixin",
+    "TrackedEntityMixin"
+  ],
+  "client": [
+  ],
+  "minVersion": "0.8",
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

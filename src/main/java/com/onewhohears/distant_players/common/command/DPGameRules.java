@@ -5,15 +5,15 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.GameRules;
 
 public class DPGameRules {
-    public static GameRules.Key<GameRules.IntegerValue> POS_UPDATE_RATE;
+    public static GameRules.Key<GameRules.IntegerValue> MAX_DISTANCE;
 
     public static void register() {
-        POS_UPDATE_RATE = CustomGameRules.registerInteger(
-                "distant_players:posUpdateRate", 5, GameRules.Category.PLAYER
+        MAX_DISTANCE = CustomGameRules.registerInteger(
+                "distant_players:maxDistance", 32, GameRules.Category.PLAYER
         );
     }
 
-    public static int getPosUpdateRate(MinecraftServer server) {
-        return server.getGameRules().getInt(POS_UPDATE_RATE);
+    public static int getMaxDistance(MinecraftServer server) {
+        return server.getGameRules().getInt(MAX_DISTANCE);
     }
 }

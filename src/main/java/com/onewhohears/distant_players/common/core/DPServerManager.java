@@ -31,10 +31,9 @@ public final class DPServerManager {
     }
 
     /**
-     * Public hook to add an entity to the views of a player. This method is intended to be called whenever an entity
-     * that should render at a distance first joins a level; Note that this is automatically done for
-     * {@code ServerPlayer}s. DSCombat compatibility will iterate over all {@code ServerPlayer}s in a level when
-     * calling this.
+     * Public hook to add an entity to the views of players. This method is intended to be called whenever an entity
+     * that should render at a distance first joins a level. Note that this is automatically done for
+     * {@code ServerPlayer}s.
      */
     public void addEntityToPlayerView(Entity target) {
         if (!(target.getLevel() instanceof ServerLevel level))

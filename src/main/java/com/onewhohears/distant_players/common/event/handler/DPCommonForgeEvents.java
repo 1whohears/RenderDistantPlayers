@@ -3,6 +3,7 @@ package com.onewhohears.distant_players.common.event.handler;
 import com.onewhohears.distant_players.DistantPlayersMod;
 import com.onewhohears.distant_players.common.core.DPServerManager;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -15,6 +16,7 @@ public class DPCommonForgeEvents {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void entityRemovedEvent(EntityLeaveLevelEvent event) {
         if (event.getEntity().level.isClientSide) return;
+        if (Entity.RemovalReason.UNLOADED_TO_CHUNK.equals(event.getEntity().getRemovalReason())) return;
         DPServerManager.get().removeEntityFromDistantView(event.getEntity());
     }
 

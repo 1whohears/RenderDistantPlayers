@@ -1,5 +1,7 @@
 package com.onewhohears.distant_players.common.core;
 
+import com.onewhohears.distant_players.common.network.DPPacketHandler;
+import com.onewhohears.distant_players.common.network.packets.S2CViewInfo;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.resources.ResourceKey;
@@ -10,6 +12,7 @@ import net.minecraft.world.level.Level;
 import java.util.HashMap;
 import java.util.Map;
 
+// FIXME - vehicles!
 public final class DPServerManager {
     private static DPServerManager INSTANCE;
 
@@ -40,6 +43,8 @@ public final class DPServerManager {
             throw new IllegalArgumentException(target.getScoreboardName() + "\" is a client-sided entity!");
 
         this.getDistantEntitiesForLevel(level).add(target.getId());
+
+        DPPacketHandler.sendToClients(new S2CViewInfo(this.distantEntities));
     }
 
     public void removeEntityFromDistantView(Entity target) {
@@ -47,6 +52,8 @@ public final class DPServerManager {
             throw new IllegalArgumentException(target.getScoreboardName() + "\" is a client-sided entity!");
 
         this.getDistantEntitiesForLevel(level).remove(target.getId());
+
+        DPPacketHandler.sendToClients(new S2CViewInfo(this.distantEntities));
     }
 
     private IntSet getDistantEntitiesForLevel(ServerLevel level) {

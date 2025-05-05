@@ -2,6 +2,7 @@ package com.onewhohears.distant_players.common.event.handler;
 
 import com.onewhohears.distant_players.DistantPlayersMod;
 import com.onewhohears.distant_players.common.command.DPGameRules;
+import com.onewhohears.distant_players.common.network.DPPacketHandler;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -10,6 +11,11 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 public class DPCommonModEvents {
     @SubscribeEvent
     public static void commonSetup(final FMLCommonSetupEvent event) {
-        DPGameRules.register();
+        event.enqueueWork(
+                () -> {
+                    DPGameRules.register();
+                    DPPacketHandler.register();
+                }
+        );
     }
 }

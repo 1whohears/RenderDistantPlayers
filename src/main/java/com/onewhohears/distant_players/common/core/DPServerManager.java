@@ -12,7 +12,6 @@ import net.minecraft.world.level.Level;
 import java.util.HashMap;
 import java.util.Map;
 
-// FIXME - vehicles!
 public final class DPServerManager {
     private static DPServerManager INSTANCE;
 
@@ -42,18 +41,22 @@ public final class DPServerManager {
         if (!(target.getLevel() instanceof ServerLevel level))
             throw new IllegalArgumentException(target.getScoreboardName() + "\" is a client-sided entity!");
 
-        this.getDistantEntitiesForLevel(level).add(target.getId());
-
-        DPPacketHandler.sendToClients(new S2CViewInfo(this.distantEntities));
+        if (this.getDistantEntitiesForLevel(level).add(target.getId()))
+            DPPacketHandler.sendToClients(new S2CViewInfo(this.distantEntities));
     }
 
     public void removeEntityFromDistantView(Entity target) {
         if (!(target.getLevel() instanceof ServerLevel level))
             throw new IllegalArgumentException(target.getScoreboardName() + "\" is a client-sided entity!");
 
-        this.getDistantEntitiesForLevel(level).remove(target.getId());
+        boolean changed = this.getDistantEntitiesForLevel(level).remove(target.getId());
 
-        DPPacketHandler.sendToClients(new S2CViewInfo(this.distantEntities));
+        for (Entity entity : target.getIndirectPassengers()) {
+            if (this.getDistantEntitiesForLevel(level).remove(entity.getId()))
+                changed = true;
+        }
+
+        if (changed) DPPacketHandler.sendToClients(new S2CViewInfo(this.distantEntities));
     }
 
     private IntSet getDistantEntitiesForLevel(ServerLevel level) {

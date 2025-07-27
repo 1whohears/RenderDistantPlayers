@@ -29,4 +29,8 @@ public class ExtraInfoManager {
     public static ExtraRenderTargetInfo get(String entityTypeId) {
         return EXTRAS.getOrDefault(entityTypeId, ExtraRenderTargetInfo.DefaultRenderInfo::new).get();
     }
+
+    public static void registerBuiltIn() {
+        register(EntityType.PLAYER, PlayerRenderInfo::new);
+    }
 }

@@ -10,8 +10,10 @@ import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -23,8 +25,6 @@ import java.util.List;
     "further up the chain", so to speak.
  */
 
-// FIXME - There should probably be an instance for every Level on the MinecraftServer, or some other impl that
-//  that considers players in different dimensions
 /**
  * Brain of the mod. Responsible for coordinating tracked entity information and updating the information in
  * the {@link com.onewhohears.distant_players.client.core.DPClientManager}. Sends entity information to other
@@ -97,13 +97,18 @@ public final class DPServerManager {
         }
     }
 
-    private boolean checkCanSee(ServerPlayer player, ServerPlayer target, boolean skipBlockCheck,
+    private boolean checkCanSee(ServerPlayer player, Entity target, boolean skipBlockCheck,
                                 int maxDistSqr, int rayCastDepth) {
+        if (!isSameDimension(player, target)) return false;
         if (!skipBlockCheck) {
             if (player.distanceToSqr(target) > maxDistSqr) return false;
             return UtilEntity.canEntitySeeEntity(player, target, rayCastDepth);
         }
         return true;
+    }
+
+    public static boolean isSameDimension(@NotNull Entity e1, @NotNull Entity e2) {
+        return e1.getLevel().dimension().equals(e2.getLevel().dimension());
     }
 
     public boolean isPlayerNotTracking(ServerPlayer player, ServerPlayer target) {

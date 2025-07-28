@@ -3,7 +3,7 @@ package com.onewhohears.distant_players.common.network.packets.toclient;
 import com.onewhohears.distant_players.client.core.DPClientManager;
 import com.onewhohears.distant_players.common.core.RenderTargetInfo;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 public class ToClientRenderPlayer {
     private final RenderTargetInfo info;
 
-    public ToClientRenderPlayer(ServerPlayer target) {
+    public ToClientRenderPlayer(Entity target) {
         info = new RenderTargetInfo(target);
     }
 

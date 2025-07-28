@@ -9,12 +9,14 @@ public class DPGameRules {
     public static GameRules.Key<GameRules.IntegerValue> CHECK_VISIBLE_RATE;
     public static GameRules.Key<GameRules.IntegerValue> RAY_CAST_DEPTH;
     public static GameRules.Key<GameRules.IntegerValue> MAX_VIEW_DISTANCE;
+    public static GameRules.Key<GameRules.IntegerValue> MAX_EXTRA_ENTITIES;
 
     public static void register() {
         POS_UPDATE_RATE = CustomGameRules.registerInteger("distant_players:posUpdateRate", 5, GameRules.Category.PLAYER);
         CHECK_VISIBLE_RATE = CustomGameRules.registerInteger("distant_players:checkVisibleRate", 20, GameRules.Category.PLAYER);
         RAY_CAST_DEPTH = CustomGameRules.registerInteger("distant_players:rayCastDepth", 320, GameRules.Category.PLAYER);
         MAX_VIEW_DISTANCE = CustomGameRules.registerInteger("distant_players:maxViewDistance", 1000, GameRules.Category.PLAYER);
+        MAX_EXTRA_ENTITIES = CustomGameRules.registerInteger("distant_players:maxExtraEntities", 50, GameRules.Category.PLAYER);
     }
 
     public static int getPosUpdateRate(MinecraftServer server) {
@@ -31,5 +33,9 @@ public class DPGameRules {
 
     public static int getViewDistance(MinecraftServer server) {
         return server.getGameRules().getInt(MAX_VIEW_DISTANCE);
+    }
+
+    public static int getMaxExtraEntities(MinecraftServer server) {
+        return server.getGameRules().getInt(MAX_EXTRA_ENTITIES);
     }
 }

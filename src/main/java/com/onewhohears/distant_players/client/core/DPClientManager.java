@@ -82,6 +82,7 @@ public final class DPClientManager {
             );
 
             try {
+                System.out.println("rendering fake entity "+fake);
                 m.getEntityRenderDispatcher().render(
                         fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight
                 );

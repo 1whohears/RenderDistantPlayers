@@ -5,6 +5,7 @@ import com.onewhohears.distant_players.common.core.RenderTargetInfo;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
@@ -14,7 +15,7 @@ import java.util.function.Supplier;
 public class ToClientRenderPlayer {
     private final RenderTargetInfo info;
 
-    public ToClientRenderPlayer(Entity target) {
+    public ToClientRenderPlayer(@NotNull Entity target) {
         info = new RenderTargetInfo(target);
     }
 

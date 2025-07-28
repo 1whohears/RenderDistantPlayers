@@ -12,8 +12,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,7 +55,7 @@ public final class DPServerManager {
      * This must be called at least once per second to keep the entity visible.
      * You may also specify that only specific players can see this entity from a distance.
      */
-    public void addExtraTrackableEntity(MinecraftServer server, Entity entity, ServerPlayer... visibleTo) {
+    public void addExtraTrackableEntity(@NotNull MinecraftServer server, @NotNull Entity entity, @NotNull ServerPlayer... visibleTo) {
         int max = DPGameRules.getMaxExtraEntities(server);
         if (extraEntities.size() >= max) return;
         int id = entity.getId(), addTime = server.getTickCount();
@@ -61,6 +63,15 @@ public final class DPServerManager {
         for (int i = 0; i < visibleTo.length; ++i) visibleToIDs[i] = visibleTo[i].getId();
         ExtraEntity extra = new ExtraEntity(id, addTime, entity.getLevel().dimension(), visibleToIDs);
         extraEntities.put(entity.getId(), extra);
+    }
+
+    public void testExtraTrackableEntity(@NotNull MinecraftServer server) {
+        List<ServerPlayer> players = server.getPlayerList().getPlayers();
+        for (ServerPlayer player : players) {
+            AABB golemBox = player.getBoundingBox().inflate(1000);
+            List<IronGolem> golems = player.getLevel().getEntitiesOfClass(IronGolem.class, golemBox);
+            for (IronGolem golem : golems) addExtraTrackableEntity(server, golem);
+        }
     }
 
     record ExtraEntity(int id, int addTime, ResourceKey<Level> dimension, int[] visibleToIDs) {
@@ -80,7 +91,6 @@ public final class DPServerManager {
             ServerPlayer player1 = players.get(i);
             for (int j = i + 1; j < players.size(); j++) {
                 ServerPlayer player2 = players.get(j);
-                if (player1.equals(player2)) continue;
                 boolean canSee = false, canSeeChecked = false;
                 if (isPlayerNotTracking(player1, player2)) {
                     canSee = checkCanSee(player1, player2, false, maxDistSqr, rayCastDepth);
@@ -123,26 +133,22 @@ public final class DPServerManager {
                 } else {
                     getPlayerVisible(player).remove(extra.id());
                 }
-
             }
         }
     }
 
-    public void sendPayload(ServerPlayer player, Entity target) {
+    public void sendPayload(@NotNull ServerPlayer player, @NotNull Entity target) {
         DPPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new ToClientRenderPlayer(target));
     }
 
     public void sendPayloads(MinecraftServer server) {
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
-        for (int i = 0; i < players.size(); i++) {
-            ServerPlayer player1 = players.get(i);
-            for (int j = i + 1; j < players.size(); j++) {
-                ServerPlayer player2 = players.get(j);
-                if (player1.equals(player2)) continue;
-                if (getPlayerVisible(player1).contains(player2.getId()))
-                    sendPayload(player1, player2);
-                if (getPlayerVisible(player2).contains(player1.getId()))
-                    sendPayload(player2, player1);
+        for (ServerPlayer player : players) {
+            IntSet visibles = getPlayerVisible(player);
+            for (int id : visibles) {
+                Entity target = player.getLevel().getEntity(id);
+                if (target == null) continue;
+                sendPayload(player, target);
             }
         }
     }

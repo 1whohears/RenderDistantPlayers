@@ -41,5 +41,6 @@ public class DPCommonForgeEvents {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void serverTick(TickEvent.ServerTickEvent event) {
         DPServerManager.get().tick(event.getServer());
+        //DPServerManager.get().testExtraTrackableEntity(event.getServer());
     }
 }

@@ -111,11 +111,8 @@ public final class DPServerManager {
                 }
             }
         }
+        removeOldExtras(server);
         extraEntities.forEach((id, extra) -> {
-            if (server.getTickCount() - extra.addTime() > 21) {
-                extraEntities.remove(extra.entity().getId());
-                return;
-            }
             for (ServerPlayer player : players) {
                 if (!extra.onVisibleList(player.getId())) continue;
                 if (isPlayerNotTracking(player, extra.entity())
@@ -126,6 +123,11 @@ public final class DPServerManager {
                 }
             }
         });
+    }
+
+    private void removeOldExtras(MinecraftServer server) {
+        extraEntities.entrySet().removeIf(entry ->
+                server.getTickCount() - entry.getValue().addTime() > 21);
     }
 
     public void sendPayload(@NotNull ServerPlayer player, @NotNull Entity target) {

@@ -137,7 +137,9 @@ public final class DPServerManager {
         for (ServerPlayer player : players) {
             IntSet visibles = getPlayerVisible(player);
             for (int id : visibles) {
-                Entity target = player.getLevel().getEntity(id);
+                Entity target;
+                if (extraEntities.containsKey(id)) target = extraEntities.get(id).entity();
+                else target = player.getLevel().getEntity(id);
                 if (target == null) continue;
                 sendPayload(player, target);
             }

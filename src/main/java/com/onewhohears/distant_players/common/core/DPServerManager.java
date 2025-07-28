@@ -19,7 +19,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.List;
 
 /*
@@ -115,16 +114,15 @@ public final class DPServerManager {
                 }
             }
         }
-        Collection<ExtraEntity> extras = extraEntities.values();
-        for (ExtraEntity extra : extras) {
+        extraEntities.forEach((id, extra) -> {
             if (server.getTickCount() - extra.addTime() > 21) {
                 extraEntities.remove(extra.id());
-                continue;
+                return;
             }
             Level level = server.getLevel(extra.dimension);
-            if (level == null) continue;
+            if (level == null) return;
             Entity entity = level.getEntity(extra.id);
-            if (entity == null) continue;
+            if (entity == null) return;
             for (ServerPlayer player : players) {
                 if (!extra.onVisibleList(player.getId())) continue;
                 if (isPlayerNotTracking(player, entity)
@@ -134,7 +132,7 @@ public final class DPServerManager {
                     getPlayerVisible(player).remove(extra.id());
                 }
             }
-        }
+        });
     }
 
     public void sendPayload(@NotNull ServerPlayer player, @NotNull Entity target) {

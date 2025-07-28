@@ -8,13 +8,11 @@ import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -57,10 +55,9 @@ public final class DPServerManager {
     public void addExtraTrackableEntity(@NotNull MinecraftServer server, @NotNull Entity entity, @NotNull ServerPlayer... visibleTo) {
         int max = DPGameRules.getMaxExtraEntities(server);
         if (extraEntities.size() >= max) return;
-        int id = entity.getId(), addTime = server.getTickCount();
         int[] visibleToIDs = new int[visibleTo.length];
         for (int i = 0; i < visibleTo.length; ++i) visibleToIDs[i] = visibleTo[i].getId();
-        ExtraEntity extra = new ExtraEntity(id, addTime, entity.getLevel().dimension(), visibleToIDs);
+        ExtraEntity extra = new ExtraEntity(entity, server.getTickCount(), visibleToIDs);
         extraEntities.put(entity.getId(), extra);
     }
 
@@ -73,7 +70,7 @@ public final class DPServerManager {
         }
     }
 
-    record ExtraEntity(int id, int addTime, ResourceKey<Level> dimension, int[] visibleToIDs) {
+    record ExtraEntity(Entity entity, int addTime, int[] visibleToIDs) {
         boolean onVisibleList(int id) {
             if (visibleToIDs.length == 0) return true;
             for (int visibleToID : visibleToIDs) if (id == visibleToID) return true;
@@ -116,20 +113,16 @@ public final class DPServerManager {
         }
         extraEntities.forEach((id, extra) -> {
             if (server.getTickCount() - extra.addTime() > 21) {
-                extraEntities.remove(extra.id());
+                extraEntities.remove(extra.entity().getId());
                 return;
             }
-            Level level = server.getLevel(extra.dimension);
-            if (level == null) return;
-            Entity entity = level.getEntity(extra.id);
-            if (entity == null) return;
             for (ServerPlayer player : players) {
                 if (!extra.onVisibleList(player.getId())) continue;
-                if (isPlayerNotTracking(player, entity)
-                        && checkCanSee(player, entity, false, maxDistSqr, rayCastDepth)) {
-                    getPlayerVisible(player).add(extra.id());
+                if (isPlayerNotTracking(player, extra.entity())
+                        && checkCanSee(player, extra.entity(), false, maxDistSqr, rayCastDepth)) {
+                    getPlayerVisible(player).add(extra.entity().getId());
                 } else {
-                    getPlayerVisible(player).remove(extra.id());
+                    getPlayerVisible(player).remove(extra.entity().getId());
                 }
             }
         });

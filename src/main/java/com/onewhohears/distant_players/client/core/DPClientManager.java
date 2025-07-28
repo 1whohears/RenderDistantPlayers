@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
 import com.onewhohears.distant_players.common.core.RenderTargetInfo;
+import com.onewhohears.distant_players.common.core.extra_render_info.ExtraRenderTargetInfo;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
@@ -17,6 +18,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -47,7 +49,7 @@ public final class DPClientManager {
     private final Set<String> bannedEntityTypes = new HashSet<>();
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
-        //LOGGER.debug("Received target to render {}", info);
+        LOGGER.debug("Received target to render {}", info);
         if (!this.targets.containsKey(info.getId())) this.targets.put(info.getId(), info);
         else this.targets.get(info.getId()).update(info, this);
     }
@@ -66,7 +68,13 @@ public final class DPClientManager {
                              MultiBufferSource.BufferSource buffer, double renderRadius) {
         Entity fake = info.getFakeEntity(this);
         if (fake == null) return;
+        boolean valid = renderFakeEntity(fake, info.getExtraInfo(), poseStack, camera, partialTick, buffer, renderRadius);
+        if (!valid) info.setInvalidEntityType();
+    }
 
+    private boolean renderFakeEntity(@NotNull Entity fake, @Nullable ExtraRenderTargetInfo extra, PoseStack poseStack,
+                                  Camera camera, float partialTick, MultiBufferSource.BufferSource buffer,
+                                  double renderRadius) {
         Minecraft m = Minecraft.getInstance();
         poseStack.pushPose();
 
@@ -84,17 +92,16 @@ public final class DPClientManager {
 
         Vec3 d = dist.normalize().scale(renderRadius / scale);
 
-        if (info.getExtraInfo() != null) d = info.getExtraInfo().onRender(
-                fake, poseStack, camera, f, d, partialTick, buffer, packedLight
-        );
+        if (extra != null) d = extra.onRender(fake, poseStack, camera, f, d, partialTick, buffer, packedLight);
 
+        boolean valid = true;
         try {
             m.getEntityRenderDispatcher().render(
                     fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight
             );
         } catch (ReportedException e) {
             blacklistEntityType(fake);
-            info.setInvalidEntityType();
+            valid = false;
 
             LOGGER.error("Attempted to render a fake entity and an error was thrown. " +
                     "Will not try to render this entity type until the game is reloaded. " +
@@ -103,6 +110,7 @@ public final class DPClientManager {
         }
 
         poseStack.popPose();
+        return valid;
     }
 
     // TODO - Configurable

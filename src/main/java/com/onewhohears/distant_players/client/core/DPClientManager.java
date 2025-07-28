@@ -47,6 +47,7 @@ public final class DPClientManager {
     private final Set<String> bannedEntityTypes = new HashSet<>();
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
+        //LOGGER.debug("Received target to render {}", info);
         if (!this.targets.containsKey(info.getId())) this.targets.put(info.getId(), info);
         else this.targets.get(info.getId()).update(info, this);
     }
@@ -57,46 +58,51 @@ public final class DPClientManager {
         MultiBufferSource.BufferSource buffer = m.renderBuffers().bufferSource();
         double renderRadius = getRenderRadius(m);
 
-        this.targets.forEach((id, info) -> {
-            poseStack.pushPose();
+        this.targets.forEach((id, info) ->
+                renderTarget(poseStack, camera, partialTick, info, buffer, renderRadius));
+    }
 
-            Entity fake = info.getFakeEntity(this);
-            if (fake == null) return;
+    private void renderTarget(PoseStack poseStack, Camera camera, float partialTick, RenderTargetInfo info,
+                             MultiBufferSource.BufferSource buffer, double renderRadius) {
+        Entity fake = info.getFakeEntity(this);
+        if (fake == null) return;
 
-            int packedLight = m.getEntityRenderDispatcher().getPackedLightCoords(fake, partialTick);
-            double dx = Mth.lerp(partialTick, fake.xOld, fake.getX());
-            double dy = Mth.lerp(partialTick, fake.yOld, fake.getY());
-            double dz = Mth.lerp(partialTick, fake.zOld, fake.getZ());
-            float f = Mth.lerp(partialTick, fake.yRotO, fake.getYRot());
+        Minecraft m = Minecraft.getInstance();
+        poseStack.pushPose();
 
-            Vec3 camPos = camera.getPosition();
-            Vec3 dist = new Vec3(dx, dy, dz).subtract(camPos);
-            float scale = (float) (renderRadius / dist.length());
+        int packedLight = m.getEntityRenderDispatcher().getPackedLightCoords(fake, partialTick);
+        double dx = Mth.lerp(partialTick, fake.xOld, fake.getX());
+        double dy = Mth.lerp(partialTick, fake.yOld, fake.getY());
+        double dz = Mth.lerp(partialTick, fake.zOld, fake.getZ());
+        float f = Mth.lerp(partialTick, fake.yRotO, fake.getYRot());
 
-            poseStack.scale(scale, scale, scale);
+        Vec3 camPos = camera.getPosition();
+        Vec3 dist = new Vec3(dx, dy, dz).subtract(camPos);
+        float scale = (float) (renderRadius / dist.length());
 
-            Vec3 d = dist.normalize().scale(renderRadius / scale);
+        poseStack.scale(scale, scale, scale);
 
-            if (info.getExtraInfo() != null) d = info.getExtraInfo().onRender(
-                    fake, poseStack, camera, f, d, partialTick, buffer, packedLight
+        Vec3 d = dist.normalize().scale(renderRadius / scale);
+
+        if (info.getExtraInfo() != null) d = info.getExtraInfo().onRender(
+                fake, poseStack, camera, f, d, partialTick, buffer, packedLight
+        );
+
+        try {
+            m.getEntityRenderDispatcher().render(
+                    fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight
             );
+        } catch (ReportedException e) {
+            blacklistEntityType(fake);
+            info.setInvalidEntityType();
 
-            try {
-                m.getEntityRenderDispatcher().render(
-                        fake, d.x, d.y, d.z, f, partialTick, poseStack, buffer, packedLight
-                );
-            } catch (ReportedException e) {
-                blacklistEntityType(fake);
-                info.setInvalidEntityType();
+            LOGGER.error("Attempted to render a fake entity and an error was thrown. " +
+                    "Will not try to render this entity type until the game is reloaded. " +
+                    "The error that would have crashed the game is the following:");
+            LOGGER.error(e.getReport().getFriendlyReport());
+        }
 
-                LOGGER.error("Attempted to render a fake entity and an error was thrown. " +
-                        "Will not try to render this entity type until the game is reloaded. " +
-                        "The error that would have crashed the game is the following:");
-                LOGGER.error(e.getReport().getFriendlyReport());
-            }
-
-            poseStack.popPose();
-        });
+        poseStack.popPose();
     }
 
     // TODO - Configurable

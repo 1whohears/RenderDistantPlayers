@@ -1,6 +1,7 @@
 package com.onewhohears.distant_players.common.core;
 
 import com.onewhohears.distant_players.client.core.DPClientManager;
+import com.onewhohears.distant_players.common.core.extra_render_info.ExtraRenderTargetInfo;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
@@ -195,5 +196,10 @@ public class RenderTargetInfo {
 
     public void setInvalidEntityType() {
         invalidEntityType = true;
+    }
+
+    @Override
+    public String toString() {
+        return "RenderTargetInfo:"+name+":"+entityTypeId+":"+vehicleTypeId;
     }
 }

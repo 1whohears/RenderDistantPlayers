@@ -1,8 +1,9 @@
-package com.onewhohears.distant_players.common.core;
+package com.onewhohears.distant_players.common.core.extra_render_info;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Quaternion;
 import com.mojang.math.Vector3f;
+import com.onewhohears.distant_players.common.core.ExtraInfoManager;
 import com.onewhohears.onewholibs.util.math.UtilAngles;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.MultiBufferSource;

@@ -1,5 +1,7 @@
 package com.onewhohears.distant_players.common.core;
 
+import com.onewhohears.distant_players.common.core.extra_render_info.ExtraRenderTargetInfo;
+import com.onewhohears.distant_players.common.core.extra_render_info.PlayerRenderInfo;
 import net.minecraft.world.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 

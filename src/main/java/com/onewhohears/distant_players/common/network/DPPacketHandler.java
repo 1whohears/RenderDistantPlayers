@@ -2,7 +2,7 @@ package com.onewhohears.distant_players.common.network;
 
 import com.onewhohears.distant_players.DistantPlayersMod;
 
-import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderPlayer;
+import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderTarget;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
@@ -25,10 +25,10 @@ public final class DPPacketHandler {
                 .simpleChannel();
         INSTANCE = net;
         int index = 0;
-        net.messageBuilder(ToClientRenderPlayer.class, index++, NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(ToClientRenderPlayer::encode)
-                .decoder(ToClientRenderPlayer::new)
-                .consumerMainThread(ToClientRenderPlayer::handle)
+        net.messageBuilder(ToClientRenderTarget.class, index++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(ToClientRenderTarget::encode)
+                .decoder(ToClientRenderTarget::new)
+                .consumerMainThread(ToClientRenderTarget::handle)
                 .add();
 
     }

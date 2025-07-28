@@ -12,14 +12,14 @@ import java.util.function.Supplier;
 /**
  * netty packet responsible for sending and handling {@link RenderTargetInfo} from serverside to clientside.
  */
-public class ToClientRenderPlayer {
+public class ToClientRenderTarget {
     private final RenderTargetInfo info;
 
-    public ToClientRenderPlayer(@NotNull Entity target) {
+    public ToClientRenderTarget(@NotNull Entity target) {
         info = new RenderTargetInfo(target);
     }
 
-    public ToClientRenderPlayer(FriendlyByteBuf buffer) {
+    public ToClientRenderTarget(FriendlyByteBuf buffer) {
         info = new RenderTargetInfo(buffer);
     }
 

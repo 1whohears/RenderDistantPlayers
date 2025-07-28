@@ -49,7 +49,7 @@ public final class DPClientManager {
     private final Set<String> bannedEntityTypes = new HashSet<>();
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
-        LOGGER.debug("Received target to render {}", info);
+        //LOGGER.debug("Received target to render {}", info);
         if (!this.targets.containsKey(info.getId())) this.targets.put(info.getId(), info);
         else this.targets.get(info.getId()).update(info, this);
     }

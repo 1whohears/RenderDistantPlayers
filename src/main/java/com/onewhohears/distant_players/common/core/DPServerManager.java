@@ -178,6 +178,17 @@ public final class DPServerManager {
 
     public void onPlayerStopTrack(Player player, Entity target) {
         getPlayerTracks(player).remove(target.getId());
+        MinecraftServer server = player.getServer();
+        if (server != null && (extraEntities.containsKey(target.getId()) || UtilEntity.isPlayer(target))) {
+            int maxDist = DPGameRules.getViewDistance(server);
+            int maxDistSqr = maxDist * maxDist;
+            int rayCastDepth = DPGameRules.getRayCastDepth(server);
+            ServerPlayer sp = (ServerPlayer) player;
+            if (checkCanSee(sp, target, false, maxDistSqr, rayCastDepth)) {
+                getPlayerVisible(player).add(target.getId());
+                sendPayload(sp, target);
+            }
+        }
     }
 
     public void onPlayerLogIn(Player player) {

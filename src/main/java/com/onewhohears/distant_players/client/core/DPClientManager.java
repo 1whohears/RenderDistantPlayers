@@ -116,7 +116,7 @@ public final class DPClientManager {
     // TODO - Configurable
     private double getRenderRadius(Minecraft m) {
         int renderDist = m.options.getEffectiveRenderDistance();
-        return Math.max(8, renderDist * 8 - 8);
+        return Math.max(8, renderDist * 8 - 16);
     }
 
     public void tick() {

@@ -29,20 +29,23 @@ public class RenderTargetInfo {
     private boolean invalidEntityType = false;
     @Nullable private ExtraRenderTargetInfo extraInfo;
     private String prevExtraInfoId = "";
+    private int age = 0;
 
     public void tickFakeEntity(@NotNull Entity entity) {
-        entity.setOldPosAndRot();
+        if (age > 0) entity.setOldPosAndRot();
         entity.setPos(entity.position().add(getMove()));
         if (extraInfo != null) extraInfo.tickFakeEntity(entity);
+        ++age;
     }
 
     public void updateFakeEntity(@NotNull Entity entity) {
-        entity.setOldPosAndRot();
+        if (age > 0) entity.setOldPosAndRot();
         entity.setPos(getPos());
         entity.setXRot(getXRot());
         entity.setYRot(getYRot());
         entity.setDeltaMovement(getMove());
         if (extraInfo != null) extraInfo.updateFakeEntity(entity);
+        if (age == 0) entity.setOldPosAndRot();
     }
 
     @Nullable

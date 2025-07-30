@@ -3,6 +3,7 @@ package com.onewhohears.distant_players.client.core;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
+import com.onewhohears.distant_players.Config;
 import com.onewhohears.distant_players.common.core.RenderTargetInfo;
 import com.onewhohears.distant_players.common.core.extra_render_info.ExtraRenderTargetInfo;
 import com.onewhohears.onewholibs.util.UtilEntity;
@@ -25,9 +26,6 @@ import org.slf4j.Logger;
 import java.util.HashSet;
 import java.util.Set;
 
-// FIXME - Armour does not render
-// FIXME - Head rot is not correct when wearing dragon head at least b/w players, test with other entities??
-// FIXME - Head rot is stuttering
 /**
  * Heart of the mod. Rendering logic takes place here. The singleton instance is continually updated to
  * reflect the serverside game-state and renders stuff accordingly.
@@ -41,7 +39,6 @@ public final class DPClientManager {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // TODO: client-configurable value
     public static final long MAX_TARGET_AGE = 500;
 
     private final IntObjectMap<RenderTargetInfo> targets = new IntObjectHashMap<>();
@@ -49,7 +46,6 @@ public final class DPClientManager {
     private final Set<String> bannedEntityTypes = new HashSet<>();
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
-        //LOGGER.debug("Received target to render {}", info);
         if (!this.targets.containsKey(info.getId())) this.targets.put(info.getId(), info);
         else this.targets.get(info.getId()).update(info, this);
     }
@@ -82,7 +78,7 @@ public final class DPClientManager {
         double dx = Mth.lerp(partialTick, fake.xOld, fake.getX());
         double dy = Mth.lerp(partialTick, fake.yOld, fake.getY());
         double dz = Mth.lerp(partialTick, fake.zOld, fake.getZ());
-        float f = Mth.lerp(partialTick, fake.yRotO, fake.getYRot());
+        float f = fake.getYRot();
 
         Vec3 camPos = camera.getPosition();
         Vec3 dist = new Vec3(dx, dy, dz).subtract(camPos);
@@ -113,10 +109,9 @@ public final class DPClientManager {
         return valid;
     }
 
-    // TODO - Configurable
     private double getRenderRadius(Minecraft m) {
         int renderDist = m.options.getEffectiveRenderDistance();
-        return Math.max(8, renderDist * 8 - 16);
+        return Math.max(8, Math.min(renderDist * 8 - 8, Config.CLIENT.maxRenderRadius.get()));
     }
 
     public void tick() {

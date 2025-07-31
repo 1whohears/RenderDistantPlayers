@@ -25,7 +25,7 @@ public class DPClientForgeEvents {
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) return;
         DPClientManager.get().renderTargets(event.getPoseStack(), event.getCamera(), event.getPartialTick());
     }
 

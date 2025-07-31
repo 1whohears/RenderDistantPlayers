@@ -51,6 +51,7 @@ public final class DPClientManager {
     }
 
     public void renderTargets(PoseStack poseStack, Camera camera, float partialTick) {
+        poseStack.pushPose();
         Minecraft m = Minecraft.getInstance();
 
         MultiBufferSource.BufferSource buffer = m.renderBuffers().bufferSource();
@@ -58,6 +59,7 @@ public final class DPClientManager {
 
         this.targets.forEach((id, info) ->
                 renderTarget(poseStack, camera, partialTick, info, buffer, renderRadius));
+        poseStack.popPose();
     }
 
     private void renderTarget(PoseStack poseStack, Camera camera, float partialTick, RenderTargetInfo info,

@@ -5,6 +5,7 @@ import com.onewhohears.distant_players.client.core.DPClientManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -22,12 +23,10 @@ public class DPClientForgeEvents {
     /**
      * Executes rendering of distant entities on the correct matrix stack.
      */
-    @SubscribeEvent()
-    public static void getViewMatrices(RenderLevelStageEvent event) {
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
-        event.getPoseStack().pushPose();
         DPClientManager.get().renderTargets(event.getPoseStack(), event.getCamera(), event.getPartialTick());
-        event.getPoseStack().popPose();
     }
 
 }

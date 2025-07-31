@@ -62,6 +62,7 @@ public final class DPServerManager {
     }
 
     public void testExtraTrackableEntity(@NotNull MinecraftServer server) {
+        if (!DPGameRules.isTestMode(server)) return;
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
         for (ServerPlayer player : players) {
             AABB golemBox = player.getBoundingBox().inflate(1000);

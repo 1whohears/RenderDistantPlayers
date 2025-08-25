@@ -129,6 +129,10 @@ public final class DPClientManager {
         });
     }
 
+    public void removeTarget(int id) {
+        targets.remove(id);
+    }
+
     @Nullable
     public Entity createFakeEntity(RenderTargetInfo info) {
         ClientLevel level = Minecraft.getInstance().level;

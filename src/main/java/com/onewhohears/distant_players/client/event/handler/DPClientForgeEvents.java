@@ -5,6 +5,7 @@ import com.onewhohears.distant_players.client.core.DPClientManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -27,6 +28,11 @@ public class DPClientForgeEvents {
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) return;
         DPClientManager.get().renderTargets(event.getPoseStack(), event.getCamera(), event.getPartialTick());
+    }
+
+    @SubscribeEvent
+    public static void onEntityJoinLevelEvent(EntityJoinLevelEvent event) {
+        DPClientManager.get().removeTarget(event.getEntity().getId());
     }
 
 }

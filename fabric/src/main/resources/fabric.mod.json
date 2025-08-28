@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "onewholibs",
+  "version": "${version}",
+  "name": "1wholibs",
+  "description": "${mod_description}",
+  "authors": [
+    "${mod_authors}"
+  ],
+  "contact": {
+    "homepage": "${homepage}",
+    "sources": "${issue_tracker}"
+  },
+  "license": "MIT",
+  "icon": "assets/distant_players/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.onewhohears.distant_players.fabric.DistantPlayersModFabric"
+    ],
+    "client": [
+      "com.onewhohears.distant_players.fabric.client.DistantPlayersModFabricClient"
+    ]
+  },
+  "mixins": [
+    "distant_players.common.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=17",
+    "architectury": ">=${architectury_version}",
+    "onewholibs": ">=${onewholibs_version}"
+  },
+  "suggests": {
+
+  }
+}

@@ -1,0 +1,51 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+plugins {
+    id "com.gradleup.shadow"
+}
+
+architectury {
+    common rootProject.enabled_platforms.split(',')
+}
+
+loom {
+    runs {
+        client {
+            property "mixin.config", "distant_players.common.mixins.json"
+        }
+    }
+
+    loom {
+        mixin {
+            defaultRefmapName = "distant_players.common.refmap.json"
+        }
+    }
+}
+
+dependencies {
+    modApi "dev.architectury:architectury:${rootProject.architectury_version}"
+
+    modApi "com.onewhohears.onewholibs:onewholibs-common-${rootProject.minecraft_version}:${rootProject.onewholibs_version}"
+}
+
+tasks.register("commonShadowJar", ShadowJar) {
+    archiveClassifier.set("shadowed")
+
+    configurations = [project.configurations.shadowImpl]
+}
+
+configurations {
+    shadowedElements {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+    shadowImpl {
+        canBeResolved = true
+        canBeConsumed = false
+        extendsFrom implementation
+    }
+}
+
+artifacts {
+    shadowedElements tasks.named("commonShadowJar")
+}

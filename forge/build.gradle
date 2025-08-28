@@ -1,0 +1,91 @@
+plugins {
+    id 'com.gradleup.shadow'
+}
+
+loom {
+    mods {
+        forge {
+            sourceSet project(":forge").sourceSets.main
+        }
+    }
+    runs {
+        client2 {
+            inherit client
+            name 'runClient2'
+            programArgs '--username=StupidIdiot'
+        }
+
+        client3 {
+            inherit client
+            name 'runClient3'
+            programArgs '--username=LunaticDonkey'
+        }
+
+        client4 {
+            inherit client
+            name 'runClient4'
+            programArgs '--username=ShitAss'
+        }
+    }
+}
+
+architectury {
+    platformSetupLoomIde()
+    forge()
+}
+
+configurations {
+    common {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentForge.extendsFrom common
+
+    shadowBundle {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+}
+
+dependencies {
+    common(project(path: ":common", configuration: "namedElements")) { transitive = false }
+    //shadowBundle common(project(path: ':common', configuration: 'shadowedElements')) { transitive false }
+    shadowBundle project(path: ':common', configuration: 'transformProductionForge')
+
+    forge "net.minecraftforge:forge:$rootProject.forge_version"
+
+    modImplementation("dev.architectury:architectury-forge:${rootProject.architectury_version}")
+
+    modApi "com.onewhohears.onewholibs:onewholibs-forge-$rootProject.minecraft_version:$rootProject.onewholibs_version"
+}
+
+processResources {
+    inputs.property 'version', project.version
+
+    filesMatching('META-INF/mods.toml') {
+        expand version: project.version,
+                mod_id: project.findProperty("mod_id"),
+                mod_name: project.findProperty("mod_name"),
+                mod_license: project.findProperty("mod_license"),
+                mod_authors: project.findProperty("mod_authors"),
+                issue_tracker: project.findProperty("issue_tracker"),
+                mod_description: project.findProperty("mod_description"),
+                minecraft_version: project.findProperty("minecraft_version"),
+                architectury_version: project.findProperty("architectury_version"),
+                forge_version: project.findProperty("forge_version"),
+                forge_version_range: project.findProperty("forge_version_range"),
+                forge_loader_version_range: project.findProperty("forge_loader_version_range"),
+                onewholibs_version: project.findProperty("onewholibs_version")
+    }
+}
+
+shadowJar {
+    configurations = [project.configurations.shadowBundle]
+    archiveClassifier = 'dev-shadow'
+}
+
+remapJar {
+    inputFile.set shadowJar.archiveFile
+}

@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"refmap": "distant_players.common.refmap.json",
+	"package": "com.onewhohears.distant_players.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"mixins": [
+		"EntityAccess",
+		"LivingEntityAccess"
+	],
+	"client": [],
+	"server": [],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

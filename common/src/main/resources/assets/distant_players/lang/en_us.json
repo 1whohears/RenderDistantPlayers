@@ -1,0 +1,8 @@
+{
+  "gamerule.distant_players.distant_players:posUpdateRate": "RDP Pos Update Rate",
+  "gamerule.distant_players.distant_players:checkVisibleRate": "RDP Check Visible Rate",
+  "gamerule.distant_players.distant_players:rayCastDepth": "RDP Ray Cast Depth",
+  "gamerule.distant_players.distant_players:maxViewDistance": "RDP Max View Distance",
+  "gamerule.distant_players.distant_players:maxExtraEntities": "RDP Max Extra Entities",
+  "gamerule.distant_players.distant_players:testMode": "RDP Test Mode"
+}

@@ -1,4 +1,4 @@
-package com.onewhohears.distant_players.client.event;
+package com.onewhohears.distant_players.client.event.fabric;
 
 import com.onewhohears.distant_players.client.core.DPClientManager;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;

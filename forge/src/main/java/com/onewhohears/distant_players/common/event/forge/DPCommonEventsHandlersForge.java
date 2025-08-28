@@ -1,4 +1,4 @@
-package com.onewhohears.distant_players.common.event;
+package com.onewhohears.distant_players.common.event.forge;
 
 import com.onewhohears.distant_players.DistantPlayersMod;
 import com.onewhohears.distant_players.common.core.DPServerManager;

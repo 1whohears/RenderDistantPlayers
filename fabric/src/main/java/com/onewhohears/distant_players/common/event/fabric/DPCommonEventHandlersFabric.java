@@ -1,4 +1,4 @@
-package com.onewhohears.distant_players.common.event;
+package com.onewhohears.distant_players.common.event.fabric;
 
 import com.onewhohears.distant_players.common.core.DPServerManager;
 import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;

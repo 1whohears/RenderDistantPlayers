@@ -13,7 +13,7 @@ public class DistantPlayersMod {
     public static final String MOD_ID = "distant_players";
 
     public static void init() {
-        DPPacketHandler.register();
+        DPPacketHandler.init();
         DPCommonEventHandlers.init();
         DPGameRules.register();
         ExtraInfoManager.registerBuiltIn();

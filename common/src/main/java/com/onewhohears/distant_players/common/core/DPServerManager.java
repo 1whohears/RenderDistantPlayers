@@ -1,7 +1,6 @@
 package com.onewhohears.distant_players.common.core;
 
 import com.onewhohears.distant_players.common.command.DPGameRules;
-import com.onewhohears.distant_players.common.network.DPPacketHandler;
 import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderTarget;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import io.netty.util.collection.IntObjectHashMap;
@@ -131,7 +130,7 @@ public final class DPServerManager {
     }
 
     public void sendPayload(@NotNull ServerPlayer player, @NotNull Entity target) {
-        DPPacketHandler.INSTANCE.sendToPlayer(player, new ToClientRenderTarget(target));
+        new ToClientRenderTarget(target).sendTo(player);
     }
 
     public void sendPayloads(MinecraftServer server) {

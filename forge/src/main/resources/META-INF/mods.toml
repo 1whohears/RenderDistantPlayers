@@ -35,5 +35,5 @@ side="BOTH"
 modId="onewholibs"
 mandatory=true
 versionRange="[${onewholibs_version},)"
-ordering="NONE"
+ordering="AFTER"
 side="BOTH"

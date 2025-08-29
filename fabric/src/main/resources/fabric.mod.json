@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "onewholibs",
+  "id": "distant_players",
   "version": "${version}",
-  "name": "1wholibs",
+  "name": "Render Distant Players",
   "description": "${mod_description}",
   "authors": [
     "${mod_authors}"

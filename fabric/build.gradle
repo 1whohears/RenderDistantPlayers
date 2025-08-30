@@ -13,20 +13,23 @@ loom {
             sourceSet project(":fabric").sourceSets.main
         }
     }
-
     runs {
+        client {
+            property("mixin.debug", "true")
+            property("mixin.verbose", "true")
+            property("mixin.checks", "true") // verifies target signatures
+            property("mixin.debug.export", "true") // dumps transformed classes to .mixin.out
+        }
         client2 {
             inherit client
             name 'runClient2'
             programArgs '--username=StupidIdiot'
         }
-
         client3 {
             inherit client
             name 'runClient3'
             programArgs '--username=LunaticDonkey'
         }
-
         client4 {
             inherit client
             name 'runClient4'
@@ -58,13 +61,12 @@ configurations.configureEach {
 
 dependencies {
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
-    //shadowBundle common(project(path: ':common', configuration: 'shadowedElements')) { transitive false }
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
 
     modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
     modImplementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
 
-    modImplementation("dev.architectury:architectury-fabric:${rootProject.architectury_version}")
+    modApi "dev.architectury:architectury-fabric:${rootProject.architectury_version}"
 
     modApi "com.onewhohears.onewholibs:onewholibs-fabric-$rootProject.minecraft_version:$rootProject.onewholibs_version"
 }

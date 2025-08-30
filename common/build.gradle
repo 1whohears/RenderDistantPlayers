@@ -8,20 +8,6 @@ architectury {
     common rootProject.enabled_platforms.split(',')
 }
 
-loom {
-    runs {
-        client {
-            property "mixin.config", "distant_players.common.mixins.json"
-        }
-    }
-
-    loom {
-        mixin {
-            defaultRefmapName = "distant_players.common.refmap.json"
-        }
-    }
-}
-
 dependencies {
     modApi "dev.architectury:architectury:${rootProject.architectury_version}"
 

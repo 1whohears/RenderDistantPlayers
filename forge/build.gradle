@@ -9,22 +9,11 @@ loom {
         }
     }
     runs {
-        client2 {
-            inherit client
-            name 'runClient2'
-            programArgs '--username=StupidIdiot'
-        }
-
-        client3 {
-            inherit client
-            name 'runClient3'
-            programArgs '--username=LunaticDonkey'
-        }
-
-        client4 {
-            inherit client
-            name 'runClient4'
-            programArgs '--username=ShitAss'
+        client {
+            property("mixin.debug", "true")
+            property("mixin.verbose", "true")
+            property("mixin.checks", "true") // verifies target signatures
+            property("mixin.debug.export", "true") // dumps transformed classes to .mixin.out
         }
     }
 }
@@ -51,12 +40,11 @@ configurations {
 
 dependencies {
     common(project(path: ":common", configuration: "namedElements")) { transitive = false }
-    //shadowBundle common(project(path: ':common', configuration: 'shadowedElements')) { transitive false }
     shadowBundle project(path: ':common', configuration: 'transformProductionForge')
 
     forge "net.minecraftforge:forge:$rootProject.forge_version"
 
-    modImplementation("dev.architectury:architectury-forge:${rootProject.architectury_version}")
+    modApi "dev.architectury:architectury-forge:${rootProject.architectury_version}"
 
     modApi "com.onewhohears.onewholibs:onewholibs-forge-$rootProject.minecraft_version:$rootProject.onewholibs_version"
 }

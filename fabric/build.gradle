@@ -14,12 +14,6 @@ loom {
         }
     }
     runs {
-        client {
-            property("mixin.debug", "true")
-            property("mixin.verbose", "true")
-            property("mixin.checks", "true") // verifies target signatures
-            property("mixin.debug.export", "true") // dumps transformed classes to .mixin.out
-        }
         client2 {
             inherit client
             name 'runClient2'

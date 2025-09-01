@@ -8,13 +8,10 @@ loom {
             sourceSet project(":forge").sourceSets.main
         }
     }
-    runs {
-        client {
-            property("mixin.debug", "true")
-            property("mixin.verbose", "true")
-            property("mixin.checks", "true") // verifies target signatures
-            property("mixin.debug.export", "true") // dumps transformed classes to .mixin.out
-        }
+    forge {
+        mixinConfigs = [
+                "distant_players.common.mixins.json"
+        ]
     }
 }
 

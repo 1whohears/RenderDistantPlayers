@@ -156,7 +156,7 @@ public final class DPClientManager {
 
         if (type.toString().equals("entity.minecraft.player")) {
             GameProfile profile = new GameProfile(info.getUUID(), info.getName());
-            e = new RemotePlayer(level, profile, null);
+            e = new RemotePlayer(level, profile);
         } else {
             e = type.create(level);
             if (e == null) {

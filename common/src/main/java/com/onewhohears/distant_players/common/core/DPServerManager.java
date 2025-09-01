@@ -64,7 +64,7 @@ public final class DPServerManager {
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
         for (ServerPlayer player : players) {
             AABB golemBox = player.getBoundingBox().inflate(1000);
-            List<IronGolem> golems = player.getLevel().getEntitiesOfClass(IronGolem.class, golemBox);
+            List<IronGolem> golems = UtilEntity.getLevel(player).getEntitiesOfClass(IronGolem.class, golemBox);
             for (IronGolem golem : golems) addExtraTrackableEntity(server, golem);
         }
     }
@@ -140,7 +140,7 @@ public final class DPServerManager {
             for (int id : visibles) {
                 Entity target;
                 if (extraEntities.containsKey(id)) target = extraEntities.get(id).entity();
-                else target = player.getLevel().getEntity(id);
+                else target = UtilEntity.getLevel(player).getEntity(id);
                 if (target == null) continue;
                 sendPayload(player, target);
             }
@@ -158,7 +158,7 @@ public final class DPServerManager {
     }
 
     public static boolean isSameDimension(@NotNull Entity e1, @NotNull Entity e2) {
-        return e1.getLevel().dimension().equals(e2.getLevel().dimension());
+        return UtilEntity.getLevel(e1).dimension().equals(UtilEntity.getLevel(e2).dimension());
     }
 
     public boolean isPlayerNotTracking(ServerPlayer player, Entity target) {

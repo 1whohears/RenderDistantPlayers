@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 public class DPClientEventHandlersFabric {
 
     public static void init() {
-        WorldRenderEvents.LAST.register(DPClientEventHandlersFabric::onRenderLevel);
+        WorldRenderEvents.AFTER_ENTITIES.register(DPClientEventHandlersFabric::onRenderLevel);
     }
 
     public static void onRenderLevel(WorldRenderContext context) {

@@ -105,7 +105,7 @@ public class RenderTargetInfo {
         }
         pos = entity.position();
         move = entity.getDeltaMovement();
-        if (target.isOnGround() && move.y < 0) move = move.multiply(1, 0, 1);
+        if (target.onGround() && move.y < 0) move = move.multiply(1, 0, 1);
         xRot = entity.getXRot();
         yRot = entity.getYRot();
         updateExtraInfo();

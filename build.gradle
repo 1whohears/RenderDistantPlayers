@@ -15,6 +15,10 @@ allprojects {
     repositories {
         maven { url "https://cursemaven.com" }
         maven { url "https://repo.repsy.io/mvn/1whohears/1wholibs" }
+        maven {
+            name = "Fuzs Mod Resources"
+            url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+        }
     }
 }
 

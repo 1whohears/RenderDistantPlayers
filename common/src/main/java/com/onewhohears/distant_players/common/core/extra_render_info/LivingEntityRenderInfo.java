@@ -27,7 +27,7 @@ public class LivingEntityRenderInfo implements ExtraRenderTargetInfo {
     @Override
     public void tickFakeEntity(@NotNull Entity entity) {
         if (!(entity instanceof LivingEntity living)) return;
-        living.calculateEntityAnimation(living, fallFlying);
+        living.calculateEntityAnimation(fallFlying);
         if (fallFlying) ((LivingEntityAccess)living).setFallFlyTicks(living.getFallFlyingTicks() + 1);
         else ((LivingEntityAccess)living).setFallFlyTicks(0);
     }

@@ -2,6 +2,7 @@ package com.onewhohears.distant_players.common.event.forge;
 
 import com.onewhohears.distant_players.DistantPlayersMod;
 import com.onewhohears.distant_players.common.core.DPServerManager;
+import com.onewhohears.onewholibs.util.UtilEntity;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -11,13 +12,13 @@ import net.minecraftforge.fml.common.Mod;
 public class DPCommonEventsHandlersForge {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void startTrackingEvent(PlayerEvent.StartTracking event) {
-        if (event.getEntity().getLevel().isClientSide()) return;
+        if (UtilEntity.getLevel(event.getEntity()).isClientSide()) return;
         DPServerManager.get().onPlayerStartTrack(event.getEntity(), event.getTarget());
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void stopTrackingEvent(PlayerEvent.StopTracking event) {
-        if (event.getEntity().getLevel().isClientSide()) return;
+        if (UtilEntity.getLevel(event.getEntity()).isClientSide()) return;
         DPServerManager.get().onPlayerStopTrack(event.getEntity(), event.getTarget());
     }
 }

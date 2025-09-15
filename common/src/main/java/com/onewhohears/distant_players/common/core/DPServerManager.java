@@ -2,12 +2,14 @@ package com.onewhohears.distant_players.common.core;
 
 import com.onewhohears.distant_players.common.command.DPGameRules;
 import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderTarget;
+import com.onewhohears.onewholibs.common.core.DistantRayCastManager;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
@@ -16,14 +18,6 @@ import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-
-/*
-   TODO - To be honest, I think it'll be fine to leave culling on the clientside. It's already possible to see entities
-    through walls with mods or (if one has them installed) cheats. I don't see much of a point attempting to stop this
-    on serverside when the only advantage conferred to someone cheating that way is the same with or without having
-    this mod installed; that is, being able to see players from anywhere. This is, in my eyes, a problem that is
-    "further up the chain", so to speak.
- */
 
 /**
  * Brain of the mod. Responsible for coordinating tracked entity information and updating the information in
@@ -40,6 +34,8 @@ public final class DPServerManager {
     public static DPServerManager get() {
         return INSTANCE;
     }
+
+    public static final long RAY_CAST_TIMEOUT = 500;
 
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
@@ -77,35 +73,40 @@ public final class DPServerManager {
         }
     }
 
-    public void checkVisible(MinecraftServer server) {
+    public void checkVisible(MinecraftServer server, int checkVisibleRate) {
+        long rayCastLifeTime = checkVisibleRate * 50L;
         int maxDist = DPGameRules.getViewDistance(server);
         int maxDistSqr = maxDist * maxDist;
-        int rayCastDepth = DPGameRules.getRayCastDepth(server);
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
         for (int i = 0; i < players.size(); i++) {
             ServerPlayer player1 = players.get(i);
             for (int j = i + 1; j < players.size(); j++) {
                 ServerPlayer player2 = players.get(j);
-                boolean canSee = false, canSeeChecked = false;
+                boolean shouldCheck = false;
                 if (isPlayerNotTracking(player1, player2)) {
-                    canSee = checkCanSee(player1, player2, false, maxDistSqr, rayCastDepth);
-                    canSeeChecked = true;
-                }
-                if (canSeeChecked) {
-                    if (canSee) {
-                        getPlayerVisible(player1).add(player2.getId());
-                    } else {
-                        getPlayerVisible(player1).remove(player2.getId());
-                        getPlayerVisible(player2).remove(player1.getId());
-                        continue;
-                    }
+                    shouldCheck = true;
                 } else {
                     getPlayerVisible(player1).remove(player2.getId());
                 }
-                if (isPlayerNotTracking(player2, player1)
-                        && checkCanSee(player2, player1, canSee, maxDistSqr, rayCastDepth)) {
-                    getPlayerVisible(player2).add(player1.getId());
+                if (isPlayerNotTracking(player2, player1)) {
+                    shouldCheck = true;
                 } else {
+                    getPlayerVisible(player2).remove(player1.getId());
+                }
+                if (shouldCheck && basicCheck(player1, player2, maxDistSqr)) {
+                    DistantRayCastManager.distantRayCast(getLevel(player1), player1, player2,
+                            (level, eyeEntity, targetEntity, pass) -> {
+                                if (pass) {
+                                    getPlayerVisible((ServerPlayer)eyeEntity).add(targetEntity.getId());
+                                    getPlayerVisible((ServerPlayer)targetEntity).add(eyeEntity.getId());
+                                } else {
+                                    getPlayerVisible((ServerPlayer)eyeEntity).remove(targetEntity.getId());
+                                    getPlayerVisible((ServerPlayer)targetEntity).remove(eyeEntity.getId());
+                                }
+                            },
+                            RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
+                } else {
+                    getPlayerVisible(player1).remove(player2.getId());
                     getPlayerVisible(player2).remove(player1.getId());
                 }
             }
@@ -114,14 +115,29 @@ public final class DPServerManager {
         extraEntities.forEach((id, extra) -> {
             for (ServerPlayer player : players) {
                 if (!extra.onVisibleList(player.getId())) continue;
-                if (isPlayerNotTracking(player, extra.entity())
-                        && checkCanSee(player, extra.entity(), false, maxDistSqr, rayCastDepth)) {
-                    getPlayerVisible(player).add(extra.entity().getId());
+                if (isPlayerNotTracking(player, extra.entity())) {
+                    DistantRayCastManager.distantRayCast(getLevel(player), player, extra.entity(),
+                            (level, eyeEntity, targetEntity, pass) -> {
+                                if (pass) {
+                                    getPlayerVisible((ServerPlayer)eyeEntity).add(targetEntity.getId());
+                                } else {
+                                    getPlayerVisible((ServerPlayer)eyeEntity).remove(targetEntity.getId());
+                                }
+                            },
+                            RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
                 } else {
                     getPlayerVisible(player).remove(extra.entity().getId());
                 }
             }
         });
+    }
+
+    private boolean basicCheck(Entity entity1, Entity entity2, double maxDistSqr) {
+        return isSameDimension(entity1, entity2) && entity1.distanceToSqr(entity2) <= maxDistSqr;
+    }
+
+    private ServerLevel getLevel(ServerPlayer player) {
+        return player.getLevel();
     }
 
     private void removeOldExtras(MinecraftServer server) {
@@ -147,16 +163,6 @@ public final class DPServerManager {
         }
     }
 
-    private boolean checkCanSee(ServerPlayer player, Entity target, boolean skipBlockCheck,
-                                int maxDistSqr, int rayCastDepth) {
-        if (!isSameDimension(player, target)) return false;
-        if (!skipBlockCheck) {
-            if (player.distanceToSqr(target) > maxDistSqr) return false;
-            return UtilEntity.canEntitySeeEntity(player, target, rayCastDepth);
-        }
-        return true;
-    }
-
     public static boolean isSameDimension(@NotNull Entity e1, @NotNull Entity e2) {
         return UtilEntity.getLevel(e1).dimension().equals(UtilEntity.getLevel(e2).dimension());
     }
@@ -168,7 +174,7 @@ public final class DPServerManager {
     public void tick(MinecraftServer server) {
         int checkVisibleRate = DPGameRules.getCheckVisibleRate(server);
         int posUpdateRate = DPGameRules.getPosUpdateRate(server);
-        if (server.getTickCount() % checkVisibleRate == 0) checkVisible(server);
+        if (server.getTickCount() % checkVisibleRate == 0) checkVisible(server, checkVisibleRate);
         if (server.getTickCount() % posUpdateRate == 0) sendPayloads(server);
     }
 
@@ -183,12 +189,18 @@ public final class DPServerManager {
         if (server != null && (extraEntities.containsKey(target.getId()) || UtilEntity.isPlayer(target))) {
             int maxDist = DPGameRules.getViewDistance(server);
             int maxDistSqr = maxDist * maxDist;
-            int rayCastDepth = DPGameRules.getRayCastDepth(server);
+            if (!basicCheck(player, target, maxDistSqr)) return;
             ServerPlayer sp = (ServerPlayer) player;
-            if (checkCanSee(sp, target, false, maxDistSqr, rayCastDepth)) {
-                getPlayerVisible(player).add(target.getId());
-                sendPayload(sp, target);
-            }
+            int checkVisibleRate = DPGameRules.getCheckVisibleRate(server);
+            long rayCastLifeTime = checkVisibleRate * 50L;
+            DistantRayCastManager.distantRayCast(getLevel(sp), sp, target,
+                    (level, eyeEntity, targetEntity, pass) -> {
+                        if (pass) {
+                            getPlayerVisible((ServerPlayer)eyeEntity).add(targetEntity.getId());
+                            sendPayload((ServerPlayer)eyeEntity, targetEntity);
+                        }
+                    },
+                    RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
         }
     }
 

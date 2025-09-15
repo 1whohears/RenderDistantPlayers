@@ -35,7 +35,7 @@ public final class DPServerManager {
         return INSTANCE;
     }
 
-    public static final long RAY_CAST_TIMEOUT = 500;
+    public static final long RAY_CAST_TIMEOUT = 550;
 
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
@@ -73,8 +73,8 @@ public final class DPServerManager {
         }
     }
 
-    public void checkVisible(MinecraftServer server, int checkVisibleRate) {
-        long rayCastLifeTime = checkVisibleRate * 50L;
+    public void checkVisible(MinecraftServer server) {
+        long rayCastLifeTime = getRayCastLifeTime(server);
         int maxDist = DPGameRules.getViewDistance(server);
         int maxDistSqr = maxDist * maxDist;
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
@@ -174,7 +174,7 @@ public final class DPServerManager {
     public void tick(MinecraftServer server) {
         int checkVisibleRate = DPGameRules.getCheckVisibleRate(server);
         int posUpdateRate = DPGameRules.getPosUpdateRate(server);
-        if (server.getTickCount() % checkVisibleRate == 0) checkVisible(server, checkVisibleRate);
+        if (server.getTickCount() % checkVisibleRate == 0) checkVisible(server);
         if (server.getTickCount() % posUpdateRate == 0) sendPayloads(server);
     }
 
@@ -191,8 +191,7 @@ public final class DPServerManager {
             int maxDistSqr = maxDist * maxDist;
             if (!basicCheck(player, target, maxDistSqr)) return;
             ServerPlayer sp = (ServerPlayer) player;
-            int checkVisibleRate = DPGameRules.getCheckVisibleRate(server);
-            long rayCastLifeTime = checkVisibleRate * 50L;
+            long rayCastLifeTime = getRayCastLifeTime(server);
             DistantRayCastManager.distantRayCast(getLevel(sp), sp, target,
                     (level, eyeEntity, targetEntity, pass) -> {
                         if (pass) {
@@ -202,6 +201,10 @@ public final class DPServerManager {
                     },
                     RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
         }
+    }
+
+    public long getRayCastLifeTime(MinecraftServer server) {
+        return DPGameRules.getCheckVisibleRate(server) * 50L + 50L;
     }
 
     public void onPlayerLogIn(Player player) {

@@ -137,7 +137,7 @@ public final class DPServerManager {
     }
 
     private ServerLevel getLevel(ServerPlayer player) {
-        return player.getLevel();
+        return player.serverLevel();
     }
 
     private void removeOldExtras(MinecraftServer server) {

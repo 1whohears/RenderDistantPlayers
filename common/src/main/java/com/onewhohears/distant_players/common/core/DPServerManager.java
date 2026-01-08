@@ -14,10 +14,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Brain of the mod. Responsible for coordinating tracked entity information and updating the information in
@@ -40,19 +45,32 @@ public final class DPServerManager {
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
     private final IntObjectMap<ExtraEntity> extraEntities = new IntObjectHashMap<>();
+    private final Set<Integer> removeExtras = new HashSet<>();
 
     /**
      * Allow players to see non player entities from a distance.
      * This must be called at least once per second to keep the entity visible.
      * You may also specify that only specific players can see this entity from a distance.
      */
-    public void addExtraTrackableEntity(@NotNull MinecraftServer server, @NotNull Entity entity, @NotNull ServerPlayer... visibleTo) {
+    public void addExtraTrackableEntity(@NotNull MinecraftServer server, @NotNull Entity entity,
+                                        @Nullable BiFunction<Level, Integer, Entity> customEntityGetter,
+                                        @NotNull ServerPlayer... visibleTo) {
         int max = DPGameRules.getMaxExtraEntities(server);
         if (extraEntities.size() >= max) return;
         int[] visibleToIDs = new int[visibleTo.length];
         for (int i = 0; i < visibleTo.length; ++i) visibleToIDs[i] = visibleTo[i].getId();
-        ExtraEntity extra = new ExtraEntity(entity, server.getTickCount(), visibleToIDs);
+        ExtraEntity extra = new ExtraEntity(entity.getId(), server.getTickCount(), visibleToIDs, customEntityGetter);
         extraEntities.put(entity.getId(), extra);
+    }
+
+    /**
+     * Allow players to see non player entities from a distance.
+     * This must be called at least once per second to keep the entity visible.
+     * You may also specify that only specific players can see this entity from a distance.
+     */
+    public void addExtraTrackableEntity(@NotNull MinecraftServer server, @NotNull Entity entity,
+                                        @NotNull ServerPlayer... visibleTo) {
+        addExtraTrackableEntity(server, entity, null, visibleTo);
     }
 
     public void testExtraTrackableEntity(@NotNull MinecraftServer server) {
@@ -65,11 +83,17 @@ public final class DPServerManager {
         }
     }
 
-    record ExtraEntity(Entity entity, int addTime, int[] visibleToIDs) {
+    record ExtraEntity(int entityId, int addTime, int[] visibleToIDs,
+                       @Nullable BiFunction<Level, Integer, Entity> customEntityGetter) {
         boolean onVisibleList(int id) {
             if (visibleToIDs.length == 0) return true;
             for (int visibleToID : visibleToIDs) if (id == visibleToID) return true;
             return false;
+        }
+        @Nullable
+        Entity getEntity(@NotNull Level level) {
+            if (customEntityGetter != null) return customEntityGetter.apply(level, entityId);
+            return level.getEntity(entityId);
         }
     }
 
@@ -114,9 +138,11 @@ public final class DPServerManager {
         removeOldExtras(server);
         extraEntities.forEach((id, extra) -> {
             for (ServerPlayer player : players) {
-                if (!extra.onVisibleList(player.getId())) continue;
-                if (isPlayerNotTracking(player, extra.entity())) {
-                    DistantRayCastManager.distantRayCast(getLevel(player), player, extra.entity(),
+                Entity entity = extra.getEntity(UtilEntity.getLevel(player));
+                if (entity != null && extra.onVisibleList(player.getId())
+                        && !isInvisible(entity)
+                        && isPlayerNotTracking(player, entity)) {
+                    DistantRayCastManager.distantRayCast(getLevel(player), player, entity,
                             (level, eyeEntity, targetEntity, pass) -> {
                                 if (pass) {
                                     getPlayerVisible((ServerPlayer)eyeEntity).add(targetEntity.getId());
@@ -126,14 +152,19 @@ public final class DPServerManager {
                             },
                             RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
                 } else {
-                    getPlayerVisible(player).remove(extra.entity().getId());
+                    getPlayerVisible(player).remove(extra.entityId());
                 }
             }
         });
     }
 
     private boolean basicCheck(Entity entity1, Entity entity2, double maxDistSqr) {
-        return isSameDimension(entity1, entity2) && entity1.distanceToSqr(entity2) <= maxDistSqr;
+        return isSameDimension(entity1, entity2) && entity1.distanceToSqr(entity2) <= maxDistSqr
+                && !(isInvisible(entity1) && isInvisible(entity2));
+    }
+
+    public static boolean isInvisible(Entity entity) {
+        return entity.isInvisible() || entity.isSpectator();
     }
 
     private ServerLevel getLevel(ServerPlayer player) {
@@ -141,11 +172,17 @@ public final class DPServerManager {
     }
 
     private void removeOldExtras(MinecraftServer server) {
-        extraEntities.entrySet().removeIf(entry ->
-                server.getTickCount() - entry.getValue().addTime() > 21);
+        int tickCount = server.getTickCount();
+        extraEntities.forEach((id, extra) -> {
+            if (tickCount - extra.addTime() > 21) removeExtras.add(id);
+        });
+        removeExtras.forEach(extraEntities::remove);
+        visible.forEach((id, ids) -> ids.removeAll(removeExtras));
+        removeExtras.clear();
     }
 
     public void sendPayload(@NotNull ServerPlayer player, @NotNull Entity target) {
+        if (isInvisible(target)) return;
         new ToClientRenderTarget(target).sendTo(player);
     }
 
@@ -155,8 +192,9 @@ public final class DPServerManager {
             IntSet visibles = getPlayerVisible(player);
             for (int id : visibles) {
                 Entity target;
-                if (extraEntities.containsKey(id)) target = extraEntities.get(id).entity();
-                else target = UtilEntity.getLevel(player).getEntity(id);
+                if (extraEntities.containsKey(id)) {
+                    target = extraEntities.get(id).getEntity(UtilEntity.getLevel(player));
+                } else target = UtilEntity.getLevel(player).getEntity(id);
                 if (target == null) continue;
                 sendPayload(player, target);
             }
@@ -190,6 +228,7 @@ public final class DPServerManager {
             int maxDist = DPGameRules.getViewDistance(server);
             int maxDistSqr = maxDist * maxDist;
             if (!basicCheck(player, target, maxDistSqr)) return;
+            if (isInvisible(target)) return;
             ServerPlayer sp = (ServerPlayer) player;
             long rayCastLifeTime = getRayCastLifeTime(server);
             DistantRayCastManager.distantRayCast(getLevel(sp), sp, target,

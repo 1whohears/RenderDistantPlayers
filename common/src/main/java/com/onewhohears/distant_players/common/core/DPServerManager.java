@@ -1,5 +1,6 @@
 package com.onewhohears.distant_players.common.core;
 
+import com.mojang.logging.LogUtils;
 import com.onewhohears.distant_players.common.command.DPGameRules;
 import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderTarget;
 import com.onewhohears.onewholibs.common.core.DistantRayCastManager;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +32,8 @@ import java.util.function.BiFunction;
  * clients, and doesn't when it's deemed that they shouldn't be able to see each other.
  */
 public final class DPServerManager {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     private static DPServerManager INSTANCE;
 
     public static void init() {
@@ -144,10 +148,17 @@ public final class DPServerManager {
                         && isPlayerNotTracking(player, entity)) {
                     DistantRayCastManager.distantRayCast(getLevel(player), player, entity,
                             (level, eyeEntity, targetEntity, pass) -> {
+                                if (!(eyeEntity instanceof ServerPlayer serverPlayerEye)) {
+                                    // FIXME extra entity and player getting swapped somehow?
+                                    LOGGER.error("Extra Entity Raycast Failed!" +
+                                            " Eye Entity should be player but is {} and the Target Entity is {}",
+                                            eyeEntity, targetEntity);
+                                    return;
+                                }
                                 if (pass) {
-                                    getPlayerVisible((ServerPlayer)eyeEntity).add(targetEntity.getId());
+                                    getPlayerVisible(serverPlayerEye).add(targetEntity.getId());
                                 } else {
-                                    getPlayerVisible((ServerPlayer)eyeEntity).remove(targetEntity.getId());
+                                    getPlayerVisible(serverPlayerEye).remove(targetEntity.getId());
                                 }
                             },
                             RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);

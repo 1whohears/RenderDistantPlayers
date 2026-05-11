@@ -115,6 +115,7 @@ public final class DPServerManager {
 
     public static final DistantVisibleManager.VisibleRequestData EXTRA_ENTITY_VISIBLE_DATA = new DistantVisibleManager.VisibleRequestData(
             0x4502, 20, VISIBLE_UPDATE_RATE, event -> {
+        LOGGER.info("RDP EXTRA RESULT {} {} {} {}", event.result(), event.approxObstructPos(), event.entity1(), event.entity2());
         if (event.result().passed) {
             get().getPlayerVisible(event.data().entityId1).add(event.data().entityId2);
         } else {

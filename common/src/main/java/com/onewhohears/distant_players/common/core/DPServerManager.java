@@ -3,7 +3,7 @@ package com.onewhohears.distant_players.common.core;
 import com.mojang.logging.LogUtils;
 import com.onewhohears.distant_players.common.command.DPGameRules;
 import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderTarget;
-import com.onewhohears.onewholibs.common.core.DistantRayCastManager;
+import com.onewhohears.onewholibs.common.core.DistantVisibleManager;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
@@ -45,6 +45,7 @@ public final class DPServerManager {
     }
 
     public static final long RAY_CAST_TIMEOUT = 550;
+    public static final int VISIBLE_UPDATE_RATE = 10;
 
     private final IntObjectMap<IntSet> tracks = new IntObjectHashMap<>();
     private final IntObjectMap<IntSet> visible = new IntObjectHashMap<>();
@@ -101,8 +102,37 @@ public final class DPServerManager {
         }
     }
 
+    public static final DistantVisibleManager.VisibleRequestData PLAYER_VISIBLE_DATA = new DistantVisibleManager.VisibleRequestData(
+            0x4501, 20, VISIBLE_UPDATE_RATE, event -> {
+                if (event.result().passed) {
+                    get().getPlayerVisible(event.data().entityId1).add(event.data().entityId2);
+                    get().getPlayerVisible(event.data().entityId2).add(event.data().entityId1);
+                } else {
+                    get().getPlayerVisible(event.data().entityId1).remove(event.data().entityId2);
+                    get().getPlayerVisible(event.data().entityId2).remove(event.data().entityId1);
+                }
+    });
+
+    public static final DistantVisibleManager.VisibleRequestData EXTRA_ENTITY_VISIBLE_DATA = new DistantVisibleManager.VisibleRequestData(
+            0x4502, 20, VISIBLE_UPDATE_RATE, event -> {
+        if (event.result().passed) {
+            get().getPlayerVisible(event.data().entityId1).add(event.data().entityId2);
+        } else {
+            get().getPlayerVisible(event.data().entityId1).remove(event.data().entityId2);
+        }
+    });
+
+    public static final DistantVisibleManager.VisibleRequestData STOP_TRACK_VISIBLE_DATA = new DistantVisibleManager.VisibleRequestData(
+            0x4503, 20, 15, event -> {
+        if (event.result().passed) {
+            get().getPlayerVisible(event.data().entityId1).add(event.data().entityId2);
+            get().sendPayload((ServerPlayer)event.entity1(), event.entity2());
+        } else {
+            get().getPlayerVisible(event.data().entityId1).remove(event.data().entityId2);
+        }
+    });
+
     public void checkVisible(MinecraftServer server) {
-        long rayCastLifeTime = getRayCastLifeTime(server);
         int maxDist = DPGameRules.getViewDistance(server);
         int maxDistSqr = maxDist * maxDist;
         List<ServerPlayer> players = server.getPlayerList().getPlayers();
@@ -122,17 +152,7 @@ public final class DPServerManager {
                     getPlayerVisible(player2).remove(player1.getId());
                 }
                 if (shouldCheck && basicCheck(player1, player2, maxDistSqr)) {
-                    DistantRayCastManager.distantRayCast(getLevel(player1), player1, player2,
-                            (level, eyeEntity, targetEntity, pass) -> {
-                                if (pass) {
-                                    getPlayerVisible((ServerPlayer)eyeEntity).add(targetEntity.getId());
-                                    getPlayerVisible((ServerPlayer)targetEntity).add(eyeEntity.getId());
-                                } else {
-                                    getPlayerVisible((ServerPlayer)eyeEntity).remove(targetEntity.getId());
-                                    getPlayerVisible((ServerPlayer)targetEntity).remove(eyeEntity.getId());
-                                }
-                            },
-                            RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
+                    DistantVisibleManager.queryVisible(server, player1, player2, PLAYER_VISIBLE_DATA);
                 } else {
                     getPlayerVisible(player1).remove(player2.getId());
                     getPlayerVisible(player2).remove(player1.getId());
@@ -146,22 +166,7 @@ public final class DPServerManager {
                 if (entity != null && extra.onVisibleList(player.getId())
                         && !isInvisible(entity)
                         && isPlayerNotTracking(player, entity)) {
-                    DistantRayCastManager.distantRayCast(getLevel(player), player, entity,
-                            (level, eyeEntity, targetEntity, pass) -> {
-                                if (!(eyeEntity instanceof ServerPlayer serverPlayerEye)) {
-                                    // FIXME extra entity and player getting swapped somehow?
-                                    LOGGER.error("Extra Entity Raycast Failed!" +
-                                            " Eye Entity should be player but is {} and the Target Entity is {}",
-                                            eyeEntity, targetEntity);
-                                    return;
-                                }
-                                if (pass) {
-                                    getPlayerVisible(serverPlayerEye).add(targetEntity.getId());
-                                } else {
-                                    getPlayerVisible(serverPlayerEye).remove(targetEntity.getId());
-                                }
-                            },
-                            RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
+                    DistantVisibleManager.queryVisible(server, player, entity, EXTRA_ENTITY_VISIBLE_DATA);
                 } else {
                     getPlayerVisible(player).remove(extra.entityId());
                 }
@@ -221,9 +226,8 @@ public final class DPServerManager {
     }
 
     public void tick(MinecraftServer server) {
-        int checkVisibleRate = DPGameRules.getCheckVisibleRate(server);
         int posUpdateRate = DPGameRules.getPosUpdateRate(server);
-        if (server.getTickCount() % checkVisibleRate == 0) checkVisible(server);
+        if (server.getTickCount() % VISIBLE_UPDATE_RATE == 0) checkVisible(server);
         if (server.getTickCount() % posUpdateRate == 0) sendPayloads(server);
     }
 
@@ -240,21 +244,8 @@ public final class DPServerManager {
             int maxDistSqr = maxDist * maxDist;
             if (!basicCheck(player, target, maxDistSqr)) return;
             if (isInvisible(target)) return;
-            ServerPlayer sp = (ServerPlayer) player;
-            long rayCastLifeTime = getRayCastLifeTime(server);
-            DistantRayCastManager.distantRayCast(getLevel(sp), sp, target,
-                    (level, eyeEntity, targetEntity, pass) -> {
-                        if (pass) {
-                            getPlayerVisible((ServerPlayer)eyeEntity).add(targetEntity.getId());
-                            sendPayload((ServerPlayer)eyeEntity, targetEntity);
-                        }
-                    },
-                    RAY_CAST_TIMEOUT, rayCastLifeTime, 0, 0);
+            DistantVisibleManager.queryVisible(server, player, target, STOP_TRACK_VISIBLE_DATA);
         }
-    }
-
-    public long getRayCastLifeTime(MinecraftServer server) {
-        return DPGameRules.getCheckVisibleRate(server) * 50L + 50L;
     }
 
     public void onPlayerLogIn(Player player) {
@@ -277,15 +268,19 @@ public final class DPServerManager {
         );
     }
 
-    private IntSet getPlayerVisible(Player player) {
+    private IntSet getPlayerVisible(int playerId) {
         return this.visible.computeIfAbsent(
-                player.getId(),
+                playerId,
                 (id) -> {
                     IntSet set = new IntArraySet();
-                    this.visible.put(player.getId(), set);
+                    this.visible.put(playerId, set);
                     return set;
                 }
         );
+    }
+
+    private IntSet getPlayerVisible(Player player) {
+        return getPlayerVisible(player.getId());
     }
 
     private DPServerManager() {}

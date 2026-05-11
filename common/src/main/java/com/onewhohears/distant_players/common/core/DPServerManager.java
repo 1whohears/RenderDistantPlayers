@@ -4,6 +4,8 @@ import com.mojang.logging.LogUtils;
 import com.onewhohears.distant_players.common.command.DPGameRules;
 import com.onewhohears.distant_players.common.network.packets.toclient.ToClientRenderTarget;
 import com.onewhohears.onewholibs.common.core.DistantVisibleManager;
+import com.onewhohears.onewholibs.common.core.SimulatedEntityManager;
+import com.onewhohears.onewholibs.entity.SimulatedEntity;
 import com.onewhohears.onewholibs.util.UtilEntity;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
@@ -24,7 +26,6 @@ import org.slf4j.Logger;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
 
 /**
  * Brain of the mod. Responsible for coordinating tracked entity information and updating the information in
@@ -58,24 +59,13 @@ public final class DPServerManager {
      * You may also specify that only specific players can see this entity from a distance.
      */
     public void addExtraTrackableEntity(@NotNull MinecraftServer server, @NotNull Entity entity,
-                                        @Nullable BiFunction<Level, Integer, Entity> customEntityGetter,
                                         @NotNull ServerPlayer... visibleTo) {
         int max = DPGameRules.getMaxExtraEntities(server);
         if (extraEntities.size() >= max) return;
         int[] visibleToIDs = new int[visibleTo.length];
         for (int i = 0; i < visibleTo.length; ++i) visibleToIDs[i] = visibleTo[i].getId();
-        ExtraEntity extra = new ExtraEntity(entity.getId(), server.getTickCount(), visibleToIDs, customEntityGetter);
+        ExtraEntity extra = new ExtraEntity(entity.getId(), server.getTickCount(), visibleToIDs);
         extraEntities.put(entity.getId(), extra);
-    }
-
-    /**
-     * Allow players to see non player entities from a distance.
-     * This must be called at least once per second to keep the entity visible.
-     * You may also specify that only specific players can see this entity from a distance.
-     */
-    public void addExtraTrackableEntity(@NotNull MinecraftServer server, @NotNull Entity entity,
-                                        @NotNull ServerPlayer... visibleTo) {
-        addExtraTrackableEntity(server, entity, null, visibleTo);
     }
 
     public void testExtraTrackableEntity(@NotNull MinecraftServer server) {
@@ -88,8 +78,7 @@ public final class DPServerManager {
         }
     }
 
-    record ExtraEntity(int entityId, int addTime, int[] visibleToIDs,
-                       @Nullable BiFunction<Level, Integer, Entity> customEntityGetter) {
+    record ExtraEntity(int entityId, int addTime, int[] visibleToIDs) {
         boolean onVisibleList(int id) {
             if (visibleToIDs.length == 0) return true;
             for (int visibleToID : visibleToIDs) if (id == visibleToID) return true;
@@ -97,7 +86,8 @@ public final class DPServerManager {
         }
         @Nullable
         Entity getEntity(@NotNull Level level) {
-            if (customEntityGetter != null) return customEntityGetter.apply(level, entityId);
+            SimulatedEntity sim = SimulatedEntityManager.get().getById(entityId);
+            if (sim != null && sim.getWorld().dimension().location().equals(level.dimension().location())) return (Entity) sim;
             return level.getEntity(entityId);
         }
     }
@@ -115,7 +105,6 @@ public final class DPServerManager {
 
     public static final DistantVisibleManager.VisibleRequestData EXTRA_ENTITY_VISIBLE_DATA = new DistantVisibleManager.VisibleRequestData(
             0x4502, 20, VISIBLE_UPDATE_RATE, event -> {
-        LOGGER.info("RDP EXTRA RESULT {} {} {} {}", event.result(), event.approxObstructPos(), event.entity1(), event.entity2());
         if (event.result().passed) {
             get().getPlayerVisible(event.data().entityId1).add(event.data().entityId2);
         } else {

@@ -46,8 +46,11 @@ public final class DPClientManager {
     private final Set<String> bannedEntityTypes = new HashSet<>();
 
     public void handleRenderPlayerPacket(RenderTargetInfo info) {
+        Minecraft m = Minecraft.getInstance();
+        if (m.level == null) return;
+        if (m.level.getEntity(info.getId()) != null) return;
         if (!this.targets.containsKey(info.getId())) this.targets.put(info.getId(), info);
-        else this.targets.get(info.getId()).update(info, this);
+        this.targets.get(info.getId()).update(info, this);
     }
 
     public void renderTargets(PoseStack poseStack, Camera camera, float partialTick) {
@@ -117,11 +120,14 @@ public final class DPClientManager {
     }
 
     public void tick() {
+        Minecraft m = Minecraft.getInstance();
+        if (m.level == null) return;
         long currentTime = System.currentTimeMillis();
 
-        this.targets.entrySet().removeIf(
-                entry -> (currentTime - entry.getValue().getLastUpdateTime()) > MAX_TARGET_AGE
-        );
+        this.targets.entrySet().removeIf(entry -> {
+            if ((currentTime - entry.getValue().getLastUpdateTime()) > MAX_TARGET_AGE) return true;
+            return m.level.getEntity(entry.getKey()) != null;
+        });
 
         this.targets.forEach((id, info) -> {
             Entity fake = info.getFakeEntity(this);

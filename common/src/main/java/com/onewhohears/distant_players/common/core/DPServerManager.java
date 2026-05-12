@@ -154,6 +154,7 @@ public final class DPServerManager {
             for (ServerPlayer player : players) {
                 Entity entity = extra.getEntity(UtilEntity.getLevel(player));
                 if (entity != null && extra.onVisibleList(player.getId())
+                        && basicCheck(player, entity, maxDistSqr)
                         && !isInvisible(entity)
                         && isPlayerNotTracking(player, entity)) {
                     DistantVisibleManager.queryVisible(server, player, entity, EXTRA_ENTITY_VISIBLE_DATA);

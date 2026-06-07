@@ -23,8 +23,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Heart of the mod. Rendering logic takes place here. The singleton instance is continually updated to
@@ -182,6 +186,22 @@ public final class DPClientManager {
 
     public void blacklistEntityType(Entity entity) {
         this.bannedEntityTypes.add(UtilEntity.getEntityTypeId(entity));
+    }
+
+    public Collection<RenderTargetInfo> getRenderTargetInfos() {
+        return targets.values();
+    }
+
+    public Stream<RenderTargetInfo> getRenderTargetInfoStream(Predicate<RenderTargetInfo> test) {
+        return targets.values().stream().filter(test);
+    }
+
+    public List<RenderTargetInfo> getRenderTargetInfoList(Predicate<RenderTargetInfo> test) {
+        return getRenderTargetInfoStream(test).toList();
+    }
+
+    public @Nullable RenderTargetInfo getRenderTargetInfo(int id) {
+        return targets.get(id);
     }
 
     public static void init() {
